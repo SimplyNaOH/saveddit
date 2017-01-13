@@ -1,0 +1,122 @@
+html, body, .main-div {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+body {
+  background-color: #00B358;
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+}
+
+.top-bar {
+  background-color: #202020;
+  color: white;
+}
+.top-bar a {
+  color: #00B358;
+}
+
+.login-prompt {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding-top: 5%;
+  box-sizing: border-box;
+  background-color: #096AA3;
+  text-align: center;
+  color: #044063;
+
+  z-index: 1000;
+
+  -webkit-transition-duration: 0.8s;
+  transition-duration: 0.8s;
+  -webkit-transition-property: top;
+  transition-property: top;
+}
+
+.login-prompt__logo {
+  height: 31px;
+}
+
+.login-prompt--hidden {
+  top: -100%;
+}
+
+.login-prompt * {
+  overflow: hidden;
+  -webkit-transition-duration: 0.8s;
+  transition-duration: 0.8s;
+  -webkit-transition-property: height;
+  transition-property: height;
+}
+
+.login-prompt__denied, .login-prompt__welcome, .login-prompt__loading-animation, .login-prompt__loading {
+  height: 0;
+}
+
+.login-prompt--access-denied .login-prompt__denied {
+  height: auto;
+}
+
+.login-prompt--got-token h1 {
+  height: 0;
+}
+
+.login-prompt--got-token i {
+  height: 1em;
+}
+
+.login-prompt--logged-in .login-prompt__welcome, .login-prompt--logged-in p {
+  height: 2em;
+}
+
+.login-prompt a {
+  color: #FF8C00;
+  background-color: #07527E;
+  display: block;
+  width: 9em;
+  margin: auto;
+  padding: 6px;
+  border-radius: 6px;
+  text-decoration: none;
+  -webkit-transition-duration: 0.3s;
+  transition-duration: 0.3s;
+  -webkit-transition-property: color, background-color;
+  transition-property: color, background-color;
+}
+
+.login-prompt a:hover {
+  color: #096AA3;
+  background-color: #FF8C00;
+}
+
+.login-prompt__username {
+  color: #FF8C00;
+}
+
+.login-prompt__denied {
+  color: #FF8C00;
+}
+
+@media only screen and (min-width: 768px) {
+  body {
+    background-image: url("background.png");
+    margin: 8px;
+    overflow-y: scroll;
+  }
+
+  .top-bar {
+    margin: -8px;
+    padding: 8px;
+  }
+
+  .login-prompt a {
+    width: 12em;
+  }
+}

@@ -1,0 +1,515 @@
+.app {
+  /*background-color: darkorange;*/
+  padding: 0;
+  height: 100%;
+}
+
+li {
+  list-style-type: none;
+}
+
+.filter-box {
+  width: 95%;
+  margin: 0 auto 10px auto;
+  padding: 3px 24px;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  background-color: #096AA3;
+}
+
+.filter-box a {
+ text-decoration: none;
+ color: #4F92BA;
+}
+
+.filter-box h1 {
+  color: #ff8c00;
+  font-size: 1em;
+  text-align: center;
+  border-bottom-style: solid;
+  border-width: 1px;
+}
+
+.filter-box__clear-all-button {
+  text-align: center;
+  display:  block;
+  font-size: 0.8em;
+  background-color: #07527E;
+  width: 10ch;
+  margin: auto;
+  border-radius: 6px 6px 0 0;
+  height: 15px;
+  -webkit-transition: height 0.2s cubic-bezier(0.4, 0, 1, 1);
+  transition: height 0.2s cubic-bezier(0.4, 0, 1, 1);
+  overflow: hidden;
+}
+
+.filter-box__clear-all-button:hover {
+  color: #096AA3;
+  background-color: #ff8c00;
+}
+
+.filter-box__clear-all-button--hidden {
+  height: 0px;
+}
+
+.active-box {
+  background-color: #2D7BA9;
+  padding: 3px;
+  border-radius: 3px 3px 0 0;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+
+.active-box {
+  text-align: center;
+  min-height: 32px;
+  margin-top: 0;
+}
+
+.active-box li {
+  display: inline-block;
+  padding: 3px 0;
+  margin: 3px 0;
+  height: 19px;
+}
+
+.active-box__sub {
+  padding: 3px;
+  border-radius: 3px;
+  background-color: #07527E;
+}
+
+.active-box__sub:hover {
+  background-color: #044063;
+  color: #FF3D00;
+  text-decoration: line-through;
+}
+
+.active-box__input-container {
+  width: 200px;
+  top: -1px;
+  position: relative;
+  text-align: left;
+}
+
+.active-box--no-active .active-box__input-container {
+  text-align: inherit;
+}
+
+.active-box__input {
+  font-family: 'FontAwesome';
+  color: #ff8c00;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  padding-left: 7px;
+  border-radius: 12px;
+  background-color: #096AA3;
+  border-width: 0;
+  box-sizing: border-box;
+  -webkit-transition: width 0.4s ease-in-out;
+  transition: width 0.4s ease-in-out;
+}
+
+.active-box__input:hover, .active-box__input:focus {
+  width: 200px;
+}
+
+.active-box__input:focus {
+  background-color: #07527E;
+}
+
+.filter-box__open-button a {
+  display: block;
+  width: 100%;
+  margin: auto;
+  z-index: 2;
+  position: relative;
+  background-color: #2D7BA9;
+  text-align: center;
+}
+
+
+.subreddits-box {
+  background-color: #2D7BA9;
+  padding: 3px 12px 12px 12px;
+  margin: 0;
+  border-radius: 0 0 3px 3px;
+  width: calc(100% - 48px);
+  box-sizing: border-box;
+  visibility: visible; /* shows sub-menu */
+  opacity: 1;
+  position: absolute;
+  transform-origin: 0% 0%;
+  transform: translateY(0%);
+  transform: scaleY(1);
+  transition: all 0.3s ease-in-out 0s, visibility 0s linear 0.3s, z-index 0s linear 0.01s;
+  transition-delay: 0s, 0s, 0.3s, 0s; /* this removes the transition delay so the menu will be visible while the other styles transition */
+  -webkit-column-count: 1; /* Chrome, Safari, Opera */
+  -moz-column-count: 1; /* Firefox */
+  column-count: 1;
+  -webkit-column-gap: 3px; /* Chrome, Safari, Opera */
+  -moz-column-gap: 3px; /* Firefox */
+  column-gap: 3px;
+  text-align: center;
+}
+
+.subreddits-box li {
+  -webkit-column-break-inside: avoid;
+  padding: 1px 0;
+}
+
+.subreddits-box a {
+  display: block;
+  background-color: #07527E;
+  border-radius: 3px;
+  padding: 2px;
+}
+
+.subreddits-box a:hover {
+  background-color: #044063;
+}
+
+.subreddits-box__closeButton {
+  -webkit-column-span: all; /* Chrome, Safari, Opera */
+  column-span: all;
+}
+
+.subreddits-box--collapsed {
+  visibility: hidden; /* hides sub-menu */
+  opacity: 0.5;
+  transform: translateY(-19px) scaleY(0.1);
+
+}
+
+.subreddits-box .subreddits-box--active {
+  color:  #ff8c00;
+}
+
+.subreddits-box .subreddits-box--partial {
+  border-right-style: solid;
+  border-right-color: #FF3D00
+}
+
+.subreddits-box .subreddits-box--nsfw {
+  color: #FF8964;
+  background-color: #FF3D00;
+}
+
+.subreddits-box .subreddits-box--nsfw:hover {
+  color: #FF6939;
+  background-color: #9B2500;
+}
+
+.subreddits-box .subreddits-box--selected {
+  color: #096AA3;
+  background-color: #ff8c00;
+}
+
+.subreddits-box__subreddit .match {
+  color: #ff8c00;
+}
+
+.subreddits-box .subreddits-box--selected .match {
+  color: #9B5600;
+}
+
+.subreddits-box__active-sub a:hover {
+  background-color: #006D36;
+}
+
+.pagination {
+  text-align: center;
+  background-color: #2D7BA9;
+  width: 95%;
+  margin: auto;
+  color: #4F92BA;
+}
+
+.pagination a {
+  text-decoration: none;
+  color: #4F92BA;
+  display: inline-block;
+  background-color: #07527E;
+  width: 80px;
+  margin: 0 10px;
+}
+
+.item-container {
+  padding: 0;
+  margin: auto;
+  /*width: 99.5%;*/
+  background-color: #096AA3;
+  /*!  */
+  box-sizing: border-box;
+}
+
+.item-container a {
+  text-decoration: none;
+  /*color: #0969A3;*/
+  color: #4F92BA;
+}
+
+.item {
+  background-color: #096AA3;
+  overflow: hidden;
+  margin: 3px 0;
+}
+
+.item__subreddit {
+  font-size: 0.6em;
+  margin: 0px;
+  padding: 0 3px;
+  color: #4F92BA;
+
+}
+
+.item__subreddit:before {
+  content: "/r/"
+}
+
+.link {
+  height: 100px;
+}
+
+.link__preview-container {
+  float: left;
+  height: 56px;
+  width: 56px;
+  margin: 0 2px;
+  position: relative;
+  top: calc((100% - 19px - 56px + 11px) / 2);
+  box-sizing: border-box;
+  background-color: #044063;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.link__preview-container a {
+  display:  block;
+  height: 100%;
+  width: 100%;
+}
+
+.link__preview-img {
+  max-width: 56px;
+  max-height: 56px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.link-content {
+  width: calc(100% - 60px);
+  height: calc(100% - 19px);
+  float: left;
+}
+
+.link__title {
+  font-size: 0.9em;
+  margin: 0;
+  padding: 4px;
+  background-color: #07527E;
+  height: calc(100% - 11px);
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#044063+0,07527e+100 */
+background: rgb(4,64,99); /* Old browsers */
+background: -moz-linear-gradient(-45deg,  rgba(4,64,99,1) 0%, rgba(7,82,126,1) 100%); /* FF3.6-15 */
+background: -webkit-linear-gradient(-45deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* Chrome10-25,Safari5.1-6 */
+background: linear-gradient(135deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', endColorstr='#07527e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+
+}
+
+.link__title a:visited {
+  color: #7dbfe8;
+}
+
+.link__button-bar {
+  height: 19px;
+  background-color: #044063;
+  padding: 0;
+  float: left;
+  width:  100%;
+}
+
+.link__button-bar li:first-child {
+  border-right-style: solid;
+  border-width: 2px;
+  border-color: #096AA3;
+  box-sizing: border-box;
+}
+
+.link__button-bar li {
+  float: left;
+  width: 50%;
+  height: 100%;
+  text-align: center;
+}
+
+.link__button-bar i {
+  margin-left: 0.5em;
+  height: auto;
+}
+
+.link__button-bar a {
+  padding-top: 2px;
+  font-size: 0.8em;
+  display: block;
+  height: 100%;
+  color: #4F92BA;
+  box-sizing: border-box;
+  -webkit-transition-duration: 0.3s;
+  transition-duration: 0.3s;
+  -webkit-transition-property: color, background-color;
+  transition-property: color, background-color;
+}
+
+.link__button-bar a:hover {
+  color: #096AA3;
+  background-color: darkorange;
+}
+
+.comment {
+  height: 130px;
+}
+
+.comment__title-bar {
+  overflow: hidden;
+}
+
+.comment__title-bar span {
+  float:  left;
+}
+
+.comment__title-bar div {
+  float: left;
+  width: calc(100% - 57px);
+}
+
+.comment__title-bar i {
+  float: left;
+  font-size: 51px;
+  padding: 0 3px;
+  background-color: #096AA3
+}
+
+.comment__title {
+  margin: 0;
+  padding: 3px;
+  font-size: 0.8em;
+  height: 40px;
+  box-sizing: border-box;
+  background-color: white;
+
+  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#044063+0,07527e+100 */
+background: rgb(4,64,99); /* Old browsers */
+background: -moz-linear-gradient(-45deg,  rgba(4,64,99,1) 0%, rgba(7,82,126,1) 100%); /* FF3.6-15 */
+background: -webkit-linear-gradient(-45deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* Chrome10-25,Safari5.1-6 */
+background: linear-gradient(135deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', endColorstr='#07527e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+
+}
+
+.comment__body {
+  font-size: 0.9em;
+  margin: 0;
+  padding: 3px;
+  width: 100%;
+  height: calc(100% - 51px - 19px);
+  box-sizing: border-box;
+  background-color: white;
+  overflow: hidden;
+  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#044063+0,07527e+100 */
+background: rgb(4,64,99); /* Old browsers */
+background: -moz-linear-gradient(45deg,  rgba(4,64,99,1) 0%, rgba(7,82,126,1) 100%); /* FF3.6-15 */
+background: -webkit-linear-gradient(45deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* Chrome10-25,Safari5.1-6 */
+background: linear-gradient(45deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', endColorstr='#07527e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
+color: #4F92BA;
+}
+
+.comment__goToReddit-button {
+  height: 19px;
+  background-color: #044063;
+  margin: 0;
+  text-align: center;
+  font-size: 1em;
+  box-shadow: 0px -10px 20px 7px rgba(0, 0, 0, 0.19);
+}
+
+.comment__goToReddit-button i {
+  margin-left: 0.5em;
+  height: auto;
+}
+
+.comment__goToReddit-button a {
+  display: block;
+  color: #4F92BA;
+  -webkit-transition-duration: 0.3s;
+  transition-duration: 0.3s;
+  -webkit-transition-property: color, background-color;
+  transition-property: color, background-color;
+}
+
+.comment__goToReddit-button a:hover {
+  background-color: darkorange;
+  color: #096AA3;
+}
+
+@media only screen and (min-width: 768px) {
+  .app {
+    padding: 6px;
+  }
+
+  .subreddits-box {
+      -webkit-column-count: 3; /* Chrome, Safari, Opera */
+  -moz-column-count: 3; /* Firefox */
+  column-count: 3;
+  -webkit-column-gap: 3px; /* Chrome, Safari, Opera */
+  -moz-column-gap: 3px; /* Firefox */
+  column-gap: 3px;
+  }
+
+  .nav-button--next {
+    margin-top: -10px;
+    padding-top: 15px;
+  }
+  .item-container {
+    padding: 24px;
+    width: 95%;
+  }
+  .item {
+    box-shadow: 4px 4px 8px 0 rgba(0, 0, 0, 0.2), 6px 6px 20px 0 rgba(0, 0, 0, 0.19);
+    margin: 12px auto;
+  }
+
+  .link {
+    height: 80px;
+  }
+  .link__button-bar {
+    width: calc(100% - 80px);
+  }
+  .link__button-bar a {
+    font-size: 0.9em;
+  }
+  .link__preview-container {
+    height: 80px;
+    width: 80px;
+    top: 0;
+    border-radius: 0;
+    margin: 0;
+  }
+  .link__preview-img {
+    max-width: 80px;
+    max-height: 80px;
+  }
+  .link-content {
+    width: calc(100% - 80px);
+    height: 61px;
+  }
+}
