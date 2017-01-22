@@ -347,6 +347,17 @@ view model =
 -- Commands
 
 
+decodeSelf =
+      field "data" <|
+          Json.map7 App.CommentInfo
+              (field "id" string)
+              (field "title" string)
+              (field "url" string)
+              (field "url" string)
+              (field "selftext" string)
+              (field "subreddit" string)
+              (field "over_18" bool)
+
 decodeComment =
     field "data" <|
         Json.map7 App.CommentInfo
@@ -407,19 +418,24 @@ decodeLink =
 
 decodeItem =
     field "kind" string
-        |> (Json.andThen
+        |> Json.andThen
                 (\kind ->
                     case kind of
                         "t1" ->
                             Json.map App.Comment decodeComment
 
                         "t3" ->
-                            Json.map App.Link decodeLink
+                          Json.at ["data", "is_self"] bool
+                            |> Json.andThen
+                              (\isSelf ->
+                                if isSelf
+                                  then Json.map App.Comment decodeSelf
+                                  else Json.map App.Link decodeLink
+                              )
 
                         _ ->
                             Json.fail "kind is not t1 or t3"
                 )
-           )
 
 
 decodeItems =
