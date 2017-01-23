@@ -57,15 +57,20 @@ li {
 .active-box {
   background-color: #2D7BA9;
   padding: 3px;
-  border-radius: 3px 3px 0 0;
+  border-radius: 3px;
   overflow: hidden;
-  margin-bottom: 3px;
-}
-
-.active-box {
+  margin-bottom: 0;
   text-align: center;
   min-height: 32px;
   margin-top: 0;
+  -webkit-transition-duration: 0.8s;
+  transition-duration: 0.8s;
+  -webkit-transition-property: min-height;
+  transition-property: min-height;
+}
+
+.active-box--no-active {
+  min-height: 0;
 }
 
 .active-box li {
@@ -87,40 +92,6 @@ li {
   text-decoration: line-through;
 }
 
-.active-box__input-container {
-  width: 200px;
-  top: -1px;
-  position: relative;
-  text-align: left;
-}
-
-.active-box--no-active .active-box__input-container {
-  text-align: inherit;
-}
-
-.active-box__input {
-  font-family: 'FontAwesome';
-  color: #ff8c00;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  padding-left: 7px;
-  border-radius: 12px;
-  background-color: #096AA3;
-  border-width: 0;
-  box-sizing: border-box;
-  -webkit-transition: width 0.4s ease-in-out;
-  transition: width 0.4s ease-in-out;
-}
-
-.active-box__input:hover, .active-box__input:focus {
-  width: 200px;
-}
-
-.active-box__input:focus {
-  background-color: #07527E;
-}
-
 .filter-box__open-button a {
   display: block;
   width: 100%;
@@ -131,6 +102,107 @@ li {
   text-align: center;
 }
 
+.subreddits-menu {
+  width: 95%;
+  margin: 0 auto 10px auto;
+  padding: 3px 24px;
+  position: relative;
+  box-sizing: border-box;
+  z-index: 2;
+  background-color: #2D7BA9;
+  border-radius: 0px 0px 3px 3px;
+}
+
+.subreddits-menu__input {
+  color: #ff8c00;
+  width: 100%;
+  height: 24px;
+  padding: 0;
+  border-radius: 6px;
+  background-color: #096AA3;
+  border-width: 0;
+  box-sizing: border-box;
+  text-align: center;
+  position: relative; /* so that z-index works */
+  z-index: 2;
+}
+
+.subreddits-menu__list {
+  background-color: #2D7BA9;
+  padding: 3px 12px 12px 12px;
+  margin: 0;
+  border-radius: 0 0 3px 3px;
+  width: calc(100% - 48px);
+  box-sizing: border-box;
+  visibility: visible; /* shows sub-menu */
+  opacity: 1;
+  position: absolute;
+  transform-origin: 0% 0%;
+  transform: translateY(0%);
+  transform: scaleY(1);
+  transition: all 0.3s ease-in-out 0s, visibility 0s linear 0.3s, z-index 0s linear 0.01s;
+  transition-delay: 0s, 0s, 0.3s, 0s; /* this removes the transition delay so the menu will be visible while the other styles transition */
+  -webkit-column-count: 1; /* Chrome, Safari, Opera */
+  -moz-column-count: 1; /* Firefox */
+  column-count: 1;
+  -webkit-column-gap: 3px; /* Chrome, Safari, Opera */
+  -moz-column-gap: 3px; /* Firefox */
+  column-gap: 3px;
+  text-align: center;
+}
+
+@media only screen and (min-width: 768px) {
+  .subreddits-menu__list {
+  -webkit-column-count: 3; /* Chrome, Safari, Opera */
+  -moz-column-count: 3; /* Firefox */
+  column-count: 3;
+  -webkit-column-gap: 3px; /* Chrome, Safari, Opera */
+  -moz-column-gap: 3px; /* Firefox */
+  column-gap: 3px;
+  }
+}
+
+.subreddits-menu__list li{
+  -webkit-column-break-inside: avoid;
+  padding: 1px 0;
+}
+
+.subreddits-menu__subreddit {
+  display: block;
+  background-color: #07527E;
+  text-decoration: none;
+  color: #4F92BA;
+  border-radius: 3px;
+  padding: 2px;
+}
+
+.subreddits-menu__subreddit:hover {
+  background-color: #044063;
+}
+
+.subreddits-menu__subreddit:focus {
+  color: #096AA3;
+  background-color: #ff8c00;
+}
+
+.subreddits-menu--collapsed .subreddits-menu__list {
+  visibility: hidden; /* hides sub-menu */
+  opacity: 0.5;
+  transform: translateY(-19px) scaleY(0.8);
+}
+
+.subreddits-menu__match {
+  color: #ff8c00;
+}
+
+.subreddits-menu--selected {
+  color: #096AA3;
+  background-color: #ff8c00;
+}
+
+.subreddits-menu--selected .subreddits-menu__match {
+    color: #9B5600;
+}
 
 .subreddits-box {
   background-color: #2D7BA9;
@@ -172,9 +244,21 @@ li {
   background-color: #044063;
 }
 
-.subreddits-box__closeButton {
+.subreddits-box__close-button {
   -webkit-column-span: all; /* Chrome, Safari, Opera */
   column-span: all;
+}
+
+.subreddits-box__close-button a {
+  display: block;
+  background-color: #07527E;
+  border-radius: 3px;
+  padding: 2px;
+}
+
+.subreddits-box__close-button a:hover {
+  background-color: #ff8c00;
+  color: #096AA3;
 }
 
 .subreddits-box--collapsed {

@@ -4,11 +4,11 @@ import AOS exposing (..)
 
 import List exposing (length)
 
-import Filterbox exposing (SubOver18 (..))
+import SearchableMenu as Menu
 
 import Html exposing (h1, p, div, span, img, a, ul, li, text, button, i)
-import Html.Attributes exposing (class, classList, id, src, href, target, attribute, style)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (class, classList, id, src, href, target, attribute, style, placeholder)
+import Html.Events exposing (onClick, onBlur, onFocus, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 
 -- Model
@@ -35,15 +35,27 @@ type alias CommentInfo =
 
 type Item = Link LinkInfo | Comment CommentInfo
 
+type SubOver18 = SFW | Partial | NSFW
+
+type alias Subreddit = String
+
+type alias SubredditInfo =
+  { subreddit : Subreddit
+  , numberOfItems : Int
+  , over18 : SubOver18
+  }
+
 type alias Model =
   { items : List Item
-  , filterBox : Filterbox.Model
+  , subreddits : List SubredditInfo
+  , filters : List Subreddit
   , showNSFW : Bool
   , startAt : Int
   , sliceLength : Int
+  , menu : Menu.Model
   }
 
-initialModel = Model [] Filterbox.initialModel False 0 15
+initialModel = Model [] [] [] False 0 15 Menu.initialModel
 
 
 -- Helper functions for items:
@@ -59,13 +71,17 @@ subreddit item = case item of
 -- Update
 
 type Msg = AddItems (List Item)
+         | UpdateSubreddits
+         | ToggleSubreddit Subreddit
+         | ClearFilters
+         | ToggleNSFW
          | NextSlice
          | PrevSlice
          | SetSliceLength Int
-         | ToggleNSFW
-         | FilterboxMsg Filterbox.Msg
+         | MenuMsg Menu.Msg
          | NoOp
 
+subsFromItems : List Item -> List SubredditInfo
 subsFromItems items =
   let
     resolveNSFW sub item = case sub.over18 of
@@ -86,10 +102,35 @@ subsFromItems items =
 fst (a,b) = a
 
 update : Msg -> Model -> (Model, Cmd Msg)
-update msg model = case msg of
-  AddItems items -> ({ model | items = model.items ++ items
-                            , filterBox = fst <| Filterbox.update (Filterbox.SetSubreddits <| subsFromItems <| model.items ++ items) model.filterBox }
-                    , refreshAOS ())
+update msg model =
+  let
+    andThen : (msg -> model -> ( model, Cmd msg )) -> msg -> ( model, Cmd msg ) -> ( model, Cmd msg )
+    andThen update msg ( model, cmd ) =
+        let
+            ( model_, cmd_ ) =
+                update msg model
+        in
+            ( model_, Cmd.batch [ cmd, cmd_ ] )
+  in
+  case msg of
+  AddItems items -> ({ model | items = model.items ++ items }
+                    , refreshAOS ()) |> andThen update UpdateSubreddits
+  UpdateSubreddits ->
+    ( { model | subreddits = subsFromItems model.items }
+    , Cmd.none )
+  ToggleSubreddit sub ->
+    ( { model | filters =
+        if List.member sub model.filters
+          then List.filter ((/=) sub) model.filters
+          else model.filters ++ [sub]
+      }
+    , Cmd.none)
+  ClearFilters ->
+    ( { model | filters = [] }
+    , Cmd.none )
+  ToggleNSFW ->
+    ({ model | showNSFW = not model.showNSFW }
+    , Cmd.none)
   NextSlice -> ({ model |
                  startAt = if (model.startAt + model.sliceLength) > length (filtered model) - 1
                            then model.startAt
@@ -101,13 +142,16 @@ update msg model = case msg of
   SetSliceLength len -> ({ model | sliceLength = len
                                 , startAt = model.startAt % len}
                         , refreshAOS ())
-  ToggleNSFW -> ({ model | showNSFW = not model.showNSFW, filterBox = (\(a,b) -> a) <| Filterbox.update Filterbox.ToggleNSFW model.filterBox}, Cmd.none)
-  FilterboxMsg msg ->
-    let (updatedFilterbox, filterboxCmd) = Filterbox.update msg model.filterBox
+  MenuMsg msg ->
+    let
+      config = { textboxId = "myId", onSelectMsg = ToggleSubreddit, toId = .subreddit }
+      (updatedMenu, menuCmd, maybeMsg) = Menu.update config msg model.menu model.subreddits
     in
-    case msg of
-      Filterbox.ToggleSub _ ->( {model | filterBox = updatedFilterbox, startAt = 0 }, Cmd.map FilterboxMsg filterboxCmd)
-      _ -> ( {model | filterBox = updatedFilterbox }, Cmd.map FilterboxMsg filterboxCmd)
+      case maybeMsg of
+        Nothing ->
+          ( {model | menu = updatedMenu}, Cmd.none )
+        Just msg ->
+          update msg model
   NoOp -> (model, Cmd.none)
 
 -- View
@@ -115,8 +159,8 @@ update msg model = case msg of
 filtered model =
   let
     isInFilteredSub item =
-      if List.isEmpty model.filterBox.active then True
-      else List.member (subreddit item) model.filterBox.active
+      if List.isEmpty model.filters then True
+      else List.member (subreddit item) model.filters
     checkNSFW item = not <| not model.showNSFW && (isNSFW item)
   in
     List.filter (\item -> isInFilteredSub item && checkNSFW item) model.items
@@ -184,18 +228,48 @@ pagination model =
     [text <| (toString <| model.startAt // model.sliceLength + 1) ++ "/" ++ (toString <| 1+ length (filtered model) // model.sliceLength )]
   ,  a [ class "pagination__next-button", onClick NextSlice, href "#0"] [text ">"]
   ]
-{-
-prevButton = a [class "nav-button nav-button--prev", onClick PrevSlice, href "#0"] [text "prev"]
-nextButton = a [class "nav-button nav-button--next"
-     , href "#firstitem"
-     , attribute "data-aos" "zoom-out"
-     , attribute "data-aos-anchor-placement" "center-bottom"
-     , onClick NextSlice]
-     [text "next"]
--}
+
+filtersView model =
+  let
+    filterView sub =
+      [(sub, li [] [a [href "#0"
+        , class "active-box__sub"
+        , onClick <| ToggleSubreddit sub
+        , onMouseEnter <| MenuMsg <| Menu.SetMouseOver True
+        , onMouseLeave <| MenuMsg <| Menu.SetMouseOver False
+        ]
+        [text sub]]
+        )
+      , (toString (sub ++ "-sep"), text " ")
+      ]
+
+    config = { toId = .subreddit
+      , div = \isOpen -> if isOpen then [class "subreddits-menu"] else [ class "subreddits-menu subreddits-menu--collapsed"]
+      , ul = [class "subreddits-menu__list"]
+      , li = \isSelected result -> Menu.HtmlDetails [] [a ((if isSelected then class "subreddits-menu__subreddit subreddits-menu--selected" else class "subreddits-menu__subreddit") :: [href "#0", onClick <| Menu.Select (.subreddit << Tuple.second <| result), onBlur Menu.LostFocus, onFocus Menu.Open]) (Menu.simpleSpanView [class "subreddits-menu__match"] result) ]
+      , input = [class "subreddits-menu__input", placeholder "Add a subreddit"]
+      , prepend = Nothing
+      , append = Just <| {
+          attributes = [class "subreddits-box__close-button"]
+        , children = [a [href "#0", onClick <| Menu.Close] [i [class "fa fa-times-circle"] []]]
+        }
+      }
+  in
+    div [class <| "filter-box"] <|
+      [ h1 [] [text "Filter by subreddit"]
+      , span [] [a [classList [("filter-box__clear-all-button", True), ("filter-box__clear-all-button--hidden", List.isEmpty model.filters)], href "#0", onClick ClearFilters] [text "clear-all"]]
+      ,  Keyed.ul [classList [("active-box", True), ("active-box--no-active", List.isEmpty model.filters)]]
+             (List.concatMap filterView model.filters)
+      ] ++ [Html.map MenuMsg <| Menu.view config model.menu model.subreddits]
+
+
 view : Model -> Html.Html Msg
 view model =
   let
     debugString = "Loaded " ++ (toString <| List.length model.items) ++ " posts. Filtered " ++ (toString <| List.length <| filtered model) ++ "."
+
+    itemView : { a | subreddit : String }  -> List (Html.Html Never)
+    itemView = flip (::) [] << text << .subreddit
+    --config = { openDivClass = "active-box", closedDivClass = "active-box subreddits-box--collapsed", olClass = "subreddits-box", liClass = "subreddits-box__subreddit", liView = itemView, textboxClass = "active-box__input", textboxId = "myId", textboxPlaceholder = "Search subreddits", toId = .subreddit}
   in
-      div [class "app"] [text debugString, Html.map FilterboxMsg <| Filterbox.view model.filterBox model.showNSFW, pagination model, itemsView model, pagination model]
+      div [class "app"] [text debugString, filtersView model , pagination model, itemsView model, pagination model]
