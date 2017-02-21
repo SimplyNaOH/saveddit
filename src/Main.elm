@@ -13,6 +13,8 @@ import Maybe exposing (withDefault)
 import Time exposing (Time)
 import Http
 
+import Task
+import Process
 
 -- Model
 
@@ -94,6 +96,7 @@ type Msg
     | AppMsg App.Msg
     | LocChange Navigation.Location
     | CloseErrors
+    | ExecuteDelayedCmd (Cmd Msg)
     | NoOp
 
 
@@ -218,14 +221,15 @@ update msg model =
                 { newModel | app = updatedApp, numRetries = 0 } ! [ Cmd.map AppMsg appCmd, newRequestCmd ]
 
         RequestResponse (Err htmlError) ->
-            ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
-            , if model.numRetries < 5
-              then Maybe.withDefault Cmd.none <|
-                  Maybe.map (\data -> Http.send RequestResponse <|
-                      savedRequest data.token data.username model.lastAfter)
-                      (loginData model)
-              else Cmd.none
-            )
+            if model.numRetries < 5
+            then ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
+                 , Maybe.withDefault Cmd.none <|
+                     Maybe.map (\data -> delayedCmd Time.second <| Http.send RequestResponse <|
+                         savedRequest data.token data.username model.lastAfter)
+                         (loginData model)
+                 )
+            else
+              ( err initialModel networkError "An error occurred while retrieving your saved posts, please try again in a few minutes.", Cmd.none )
 
         MakeRequest ->
             case model.loginState of
@@ -260,13 +264,14 @@ update msg model =
                     )
 
         UsernameResponse (Err htmlError) ->
-            ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
-            , if model.numRetries < 5
-              then Maybe.withDefault Cmd.none <|
-                  Maybe.map (\token -> Http.send UsernameResponse (usernameRequest token))
-                      (token model)
-              else Cmd.none
-            )
+            if model.numRetries < 5
+            then ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
+                 , Maybe.withDefault Cmd.none <|
+                     Maybe.map (\token -> delayedCmd Time.second <| Http.send UsernameResponse (usernameRequest token))
+                         (token model)
+                 )
+            else
+              ( err initialModel networkError "An error occurred while retrieving your username, please try again in a few minutes." , Cmd.none )
 
         AppMsg msg ->
             let
@@ -281,6 +286,8 @@ update msg model =
         CloseErrors ->
             ( {model | newErrorsToShow = False }, Cmd.none)
 
+        ExecuteDelayedCmd cmd ->
+            ( model, cmd )
         NoOp ->
             ( model, Cmd.none )
 
@@ -550,3 +557,13 @@ main =
         , view = view
         , update = update
         }
+
+
+-- Helper
+
+delayedCmd : Time -> Cmd Msg -> Cmd Msg
+delayedCmd delay cmd = Task.perform (\cmd -> ExecuteDelayedCmd cmd) <|
+    Task.map (Cmd.batch) <|
+      Task.sequence [ Task.map (always Cmd.none) <| Process.sleep delay
+                  , Task.succeed cmd
+                  ]
