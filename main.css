@@ -120,3 +120,32 @@ body {
     width: 12em;
   }
 }
+
+.error-prompt {
+  z-index: 3000;
+  position:fixed;
+  bottom: 20px;
+  max-height: 90%;
+  background-color: hsla(14, 50%, 90%, 1);
+  width: 95%;
+  left: 2.5%;
+  overflow: auto;
+}
+
+.error-prompt a {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: x-large;
+  background-color: #ff3d00;
+  color: #07527E;
+}
+
+.error-prompt a:hover {
+  background-color: #ff8c00;
+}
+
+.error-prompt ul {
+  margin: 0;
+  padding: 10px;
+}

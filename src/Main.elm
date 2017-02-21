@@ -55,16 +55,27 @@ type alias Model =
     , loginState : LoginState
     , loadedData : Bool
     , errors : List ( ErrorCode, String )
+    , newErrorsToShow : Bool
+    , numRetries : Int
+    , lastAfter : String
     }
 
 
 initialModel =
-    Model App.initialModel NoLogin False []
+    Model App.initialModel NoLogin False [] False 0 ""
 
 
 err model errorCode error =
-    { model | errors = ( errorCode, error ) :: model.errors }
+    { model | errors = ( errorCode, error ) :: model.errors, newErrorsToShow = True }
 
+loginData : Model -> Maybe LoginData
+loginData model = case model.loginState of
+  NoLogin -> Nothing
+  GotToken data -> Just data
+  LoggedIn data -> Just data
+
+token : Model -> Maybe Token
+token = Maybe.map .token << loginData
 
 type alias RedditResponse =
     { headers : Dict String String
@@ -82,6 +93,7 @@ type Msg
     | UsernameResponse (Result Http.Error String)
     | AppMsg App.Msg
     | LocChange Navigation.Location
+    | CloseErrors
     | NoOp
 
 
@@ -182,14 +194,14 @@ update msg model =
                         NoLogin ->
                             ( err model
                                 unhandledError
-                                "Error while trying to load data (Lost login data)"
+                                "Error while trying to load data (no login data)"
                             , Cmd.none
                             )
 
                         GotToken _ ->
                             ( err model
                                 unhandledError
-                                "Error while trying to load data (Lost login data)"
+                                "Error while trying to load data (no login data)"
                             , Cmd.none
                             )
 
@@ -203,10 +215,17 @@ update msg model =
                                 ( { model | loadedData = True }, Cmd.none )
             in
                 -- TODO check (Dict.get "x-ratelimit-remaining" response.headers)
-                { newModel | app = updatedApp } ! [ Cmd.map AppMsg appCmd, newRequestCmd ]
+                { newModel | app = updatedApp, numRetries = 0 } ! [ Cmd.map AppMsg appCmd, newRequestCmd ]
 
         RequestResponse (Err htmlError) ->
-            ( err model networkError (toString htmlError), Cmd.none )
+            ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
+            , if model.numRetries < 5
+              then Maybe.withDefault Cmd.none <|
+                  Maybe.map (\data -> Http.send RequestResponse <|
+                      savedRequest data.token data.username model.lastAfter)
+                      (loginData model)
+              else Cmd.none
+            )
 
         MakeRequest ->
             case model.loginState of
@@ -225,7 +244,7 @@ update msg model =
         UsernameResponse (Ok username) ->
             case model.loginState of
                 GotToken data ->
-                    ( { model | loginState = LoggedIn { data | username = username } }
+                    ( { model | loginState = LoggedIn { data | username = username }, numRetries = 0 }
                     , if not model.loadedData then
                         Http.send RequestResponse <|
                             savedRequest data.token username ""
@@ -241,7 +260,13 @@ update msg model =
                     )
 
         UsernameResponse (Err htmlError) ->
-            ( err model networkError (toString htmlError), Cmd.none )
+            ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
+            , if model.numRetries < 5
+              then Maybe.withDefault Cmd.none <|
+                  Maybe.map (\token -> Http.send UsernameResponse (usernameRequest token))
+                      (token model)
+              else Cmd.none
+            )
 
         AppMsg msg ->
             let
@@ -252,6 +277,9 @@ update msg model =
 
         LocChange location ->
             processLocation location model
+
+        CloseErrors ->
+            ( {model | newErrorsToShow = False }, Cmd.none)
 
         NoOp ->
             ( model, Cmd.none )
@@ -317,11 +345,21 @@ loginPrompt model =
 
         ]
 
+errorPrompt model =
+    div [class "error-prompt"]
+        [ a [href "#0", onClick <| CloseErrors] [i [class "fa fa-times-circle"] []]
+        , ul [] <|
+             List.map (\(code, string) ->
+                 li [] [text <| (toString code) ++ ": " ++ string ]
+                 ) model.errors
+        ]
+
 
 view : Model -> Html.Html Msg
 view model =
     div [ class "main-div" ] <|
-        [ div [ class "top-bar" ]
+        [ loginPrompt model
+        , div [ class "top-bar" ]
             [ img [ src "resources/logo.png" ] []
             , span
                 [ classList
@@ -338,9 +376,8 @@ view model =
                 ]
             , a [ href "#0", onClick <| AppMsg App.ToggleNSFW ] [ text "Toggle NSFW" ]
             ]
-        , loginPrompt model
         , Html.map AppMsg (App.view model.app)
-        ]
+        ] ++ if model.newErrorsToShow then [errorPrompt model] else []
 
 
 
@@ -496,11 +533,6 @@ usernameRequest token =
         , timeout = Nothing
         , withCredentials = False
         }
-
-
-initialCmd =
-    Cmd.none
-
 
 
 -- app
