@@ -55,18 +55,22 @@ type LoginState
 type alias ErrorCode =
     Int
 
-
+accessDenied : ErrorCode
 accessDenied =
     0
 
-
+networkError : ErrorCode
 networkError =
     1
 
-
+unhandledError : ErrorCode
 unhandledError =
     2
 
+
+err : Model -> ErrorCode -> String -> Model
+err model errorCode error =
+    { model | errors = ( errorCode, error ) :: model.errors, newErrorsToShow = True }
 
 type alias Model =
     { app : App.Model
@@ -81,10 +85,6 @@ type alias Model =
 
 initialModel =
     Model App.initialModel NoLogin False [] False 0 ""
-
-
-err model errorCode error =
-    { model | errors = ( errorCode, error ) :: model.errors, newErrorsToShow = True }
 
 
 loginData : Model -> Maybe LoginData
@@ -133,6 +133,9 @@ processLocation location model =
         findOne =
             Regex.AtMost 1
 
+        {- | extracts a parameter from a URL (things like "p1=v1&p2=v2...",
+        give it "p1" and it will maybe give you "v1")
+        -}
         parameter name =
             Maybe.map (String.dropLeft (String.length name + 1)) <|
                 Maybe.map .match <|
@@ -326,14 +329,14 @@ update msg model =
 
 
 -- View
+
+
 -- The client_id and redirect_uri below are replaced in the build script
-
-
 accessRequestUrl =
     "https://www.reddit.com/api/v1/authorize?response_type=token"
         ++ "&client_id=ThisIsAMagicString"
         ++ "&redirect_uri=ThisIsAMagicString"
-        ++ "&scope=history,identity&state=asdfghjkl"
+        ++ "&scope=history,identity&state=asdfghjkl" -- TODO actually generate and check the state parameter
 
 
 username model =
@@ -531,19 +534,7 @@ decodeItems =
 
 
 
-{-
-   loadPosts =
-     Cmd.batch
-       [ Http.send LoadedData (Http.get "1.json" decodeItems)
-       , Http.send LoadedData (Http.get "2.json" decodeItems)
-       , Http.send LoadedData (Http.get "3.json" decodeItems)
-       , Http.send LoadedData (Http.get "4.json" decodeItems)
-       , Http.send LoadedData (Http.get "5.json" decodeItems)
-       ]
--}
--- TODO: Handle error here!
-
-
+-- TODO: Handle error here?
 htmlResponseToRedditResponse response =
     Ok
         { headers = response.headers

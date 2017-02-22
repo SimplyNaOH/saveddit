@@ -26,7 +26,8 @@ import Html.Keyed as Keyed
 
 -- Model
 
-
+{- | Record to store data of link posts
+-}
 type alias LinkInfo =
     { id : String
     , title : String
@@ -38,7 +39,8 @@ type alias LinkInfo =
     , over18 : Bool
     }
 
-
+{- | Record to store data of comment and self posts.
+-}
 type alias CommentInfo =
     { id : String
     , title : String
@@ -49,29 +51,41 @@ type alias CommentInfo =
     , over18 : Bool
     }
 
-
+{- | Any item we want to display is stored either of the previous records.
+-}
 type Item
     = Link LinkInfo
     | Comment CommentInfo
 
-
+{- | Is a subreddit NSFW? At this time, we don't check if a subreddit is NSFW
+but rather wether the posts we have from a particular subreddit are NSFW. If all
+the posts we have from a subreddit are NSFW, the sub is marked as NSFW, if some
+of them are it is marked as Partial, else it is marked as SFW.
+-}
 type SubOver18
     = SFW
     | Partial
     | NSFW
 
-
+{- | An actual subreddit is just a string.
+-}
 type alias Subreddit =
     String
 
-
+{- | We keep associate data for a subreddit, beyond its name. Namely, how many
+posts belonging to it we have and wether they are NSFW.
+-}
 type alias SubredditInfo =
     { subreddit : Subreddit
     , numberOfItems : Int
     , over18 : SubOver18
     }
 
-
+{- | The model contains the items (posts), all the subreddits they belong to,
+the subreddits we are currently filtering by, wether the user wants to be shown
+NSFW posts and subreddits, where the current page starts and how many items to
+show per page, and finaly, the state of the subreddit selection menu.
+-}
 type alias Model =
     { items : List Item
     , subreddits : List SubredditInfo
@@ -101,7 +115,7 @@ isNSFW item =
             comment.over18
 
 
-subreddit : Item -> String
+subreddit : Item -> Subreddit
 subreddit item =
     case item of
         Link link ->
@@ -117,7 +131,7 @@ subreddit item =
 
 type Msg
     = AddItems (List Item)
-    | UpdateSubreddits
+    | UpdateSubreddits -- summarize the subreddits from the items in the model
     | ToggleSubreddit Subreddit
     | ClearFilters
     | ToggleNSFW
@@ -127,7 +141,10 @@ type Msg
     | MenuMsg Menu.Msg
     | NoOp
 
-
+{- | This is used in the UpdateSubreddits Msg to generate the SubredditInfo for
+each unique subreddit. To do this we must fold over the items, updating the
+corresponding SubredditInfo as we go.
+-}
 subsFromItems : List Item -> List SubredditInfo
 subsFromItems items =
     let
@@ -266,7 +283,9 @@ update msg model =
 
 -- View
 
-
+{- | Filter the items based on active subreddit filters and wether we are
+showing NSFW posts.
+-}
 filtered model =
     let
         isInFilteredSub item =
