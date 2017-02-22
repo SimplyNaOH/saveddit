@@ -1,7 +1,9 @@
 .app {
-  /*background-color: darkorange;*/
-  padding: 0;
-  height: 100%;
+  background-color: #dadada;
+  /* padding: 0; */
+  /* height: 100%; */
+  box-shadow: 4px 4px 8px 0 rgba(0, 0, 0, 0.2), 6px 6px 20px 0 rgba(0, 0, 0, 0.19);
+  padding: 19px 0;
 }
 
 li {
@@ -15,7 +17,7 @@ li {
   position: relative;
   z-index: 2;
   box-sizing: border-box;
-  background-color: #096AA3;
+  background-color: #2d7ba9;
 }
 
 .filter-box a {
@@ -55,7 +57,7 @@ li {
 }
 
 .active-box {
-  background-color: #2D7BA9;
+  background-color: #096aa3;
   padding: 3px;
   border-radius: 3px;
   overflow: hidden;
@@ -71,6 +73,7 @@ li {
 
 .active-box--no-active {
   min-height: 0;
+  padding: 0 3px;
 }
 
 .active-box li {
@@ -88,7 +91,7 @@ li {
 
 .active-box__sub:hover {
   background-color: #044063;
-  color: #FF3D00;
+  /* color: #FF3D00; */
   text-decoration: line-through;
 }
 
@@ -103,13 +106,13 @@ li {
 }
 
 .subreddits-menu {
-  width: 95%;
+  width: 90%;
   margin: 0 auto 10px auto;
-  padding: 3px 24px;
+  /* padding: 3px 24px; */
   position: relative;
   box-sizing: border-box;
   z-index: 2;
-  background-color: #2D7BA9;
+  /* background-color: #07527e; */
   border-radius: 0px 0px 3px 3px;
 }
 
@@ -118,7 +121,7 @@ li {
   width: 100%;
   height: 24px;
   padding: 0;
-  border-radius: 6px;
+  border-radius: 0 0 6px 6px;
   background-color: #096AA3;
   border-width: 0;
   box-sizing: border-box;
@@ -132,7 +135,7 @@ li {
   padding: 3px 12px 12px 12px;
   margin: 0;
   border-radius: 0 0 3px 3px;
-  width: calc(100% - 48px);
+  width: 100%;
   box-sizing: border-box;
   visibility: visible; /* shows sub-menu */
   opacity: 1;
@@ -176,13 +179,12 @@ li {
   padding: 2px;
 }
 
-.subreddits-menu__subreddit:hover {
+.subreddits-menu__subreddit--active {
   background-color: #044063;
 }
 
-.subreddits-menu__subreddit:focus {
-  color: #096AA3;
-  background-color: #ff8c00;
+.subreddits-menu__subreddit:hover {
+  background-color: #044063;
 }
 
 .subreddits-menu--collapsed .subreddits-menu__list {
@@ -203,6 +205,8 @@ li {
 .subreddits-menu--selected .subreddits-menu__match {
     color: #9B5600;
 }
+
+.subreddits-menu
 
 .subreddits-box {
   background-color: #2D7BA9;
@@ -324,8 +328,8 @@ li {
 .item-container {
   padding: 0;
   margin: auto;
-  /*width: 99.5%;*/
-  background-color: #096AA3;
+  /* width: 99.5%; */
+  /* background-color: white; */
   /*!  */
   box-sizing: border-box;
 }
@@ -333,11 +337,18 @@ li {
 .item-container a {
   text-decoration: none;
   /*color: #0969A3;*/
-  color: #4F92BA;
+  /*color: #4F92BA;*/
+  color: #044063;
 }
 
 .item {
-  background-color: #096AA3;
+  background-color: #2d7ba9;
+  overflow: hidden;
+  margin: 3px 0;
+}
+
+.item-nsfw {
+  background-color: #FF3D00;
   overflow: hidden;
   margin: 3px 0;
 }
@@ -346,12 +357,37 @@ li {
   font-size: 0.6em;
   margin: 0px;
   padding: 0 3px;
-  color: #4F92BA;
-
 }
 
-.item__subreddit:before {
-  content: "/r/"
+.item__subreddit a {
+    /* color: #4F92BA; */
+    position: relative;
+    z-index: 1;
+}
+
+.item__subreddit-prefix {
+  background-color: #ff8c00;
+  /* color: #096AA3; */
+  border-radius: 5.5px;
+}
+
+.item__subreddit-prefix:after {
+  content: "";
+  background-color: #ff8c00;
+  border-radius: 0 5.5px 5.5px 0;
+  position: absolute;
+  top: 0;
+  left: 5.5px;
+  border-radius: 0 5.5px 5.5px 0;
+  transform-origin: left;
+  transition:width 0.25s ease;
+  width: 0%;
+  height: 100%;
+  z-index: -1;
+}
+
+.item__subreddit:hover .item__subreddit-prefix:after {
+  width: calc(100% - 4px);
 }
 
 .link {
@@ -366,7 +402,7 @@ li {
   position: relative;
   top: calc((100% - 19px - 56px + 11px) / 2);
   box-sizing: border-box;
-  background-color: #044063;
+  background-color: #dadada;
   overflow: hidden;
   border-radius: 10px;
 }
@@ -390,23 +426,18 @@ li {
   width: calc(100% - 60px);
   height: calc(100% - 19px);
   float: left;
+  border-bottom: solid 1px #ccc;
+  box-sizing: border-box;
 }
 
 .link__title {
   font-size: 0.9em;
   margin: 0;
   padding: 4px;
-  background-color: #07527E;
+  background-color: white;
   height: calc(100% - 11px);
   box-sizing: border-box;
   overflow: hidden;
-  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#044063+0,07527e+100 */
-background: rgb(4,64,99); /* Old browsers */
-background: -moz-linear-gradient(-45deg,  rgba(4,64,99,1) 0%, rgba(7,82,126,1) 100%); /* FF3.6-15 */
-background: -webkit-linear-gradient(-45deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* Chrome10-25,Safari5.1-6 */
-background: linear-gradient(135deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', endColorstr='#07527e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
-
 }
 
 .link__title a:visited {
@@ -415,7 +446,7 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', end
 
 .link__button-bar {
   height: 19px;
-  background-color: #044063;
+  background-color: #dadada;
   padding: 0;
   float: left;
   width:  100%;
@@ -459,7 +490,7 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', end
 }
 
 .comment {
-  height: 130px;
+  /* height: 130px; */
 }
 
 .comment__title-bar {
@@ -467,36 +498,25 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', end
 }
 
 .comment__title-bar span {
-  float:  left;
 }
 
-.comment__title-bar div {
-  float: left;
-  width: calc(100% - 57px);
-}
 
 .comment__title-bar i {
   float: left;
-  font-size: 51px;
+  font-size: 40px;
   padding: 0 3px;
-  background-color: #096AA3
+  background-color: #ffffff;
 }
 
 .comment__title {
   margin: 0;
   padding: 3px;
-  font-size: 0.8em;
+  font-size: 0.9em;
   height: 40px;
   box-sizing: border-box;
   background-color: white;
-
-  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#044063+0,07527e+100 */
-background: rgb(4,64,99); /* Old browsers */
-background: -moz-linear-gradient(-45deg,  rgba(4,64,99,1) 0%, rgba(7,82,126,1) 100%); /* FF3.6-15 */
-background: -webkit-linear-gradient(-45deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* Chrome10-25,Safari5.1-6 */
-background: linear-gradient(135deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', endColorstr='#07527e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
-
+  float: right;
+  width: calc(100% - 46.02px);
 }
 
 .comment__body {
@@ -507,23 +527,18 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', end
   height: calc(100% - 51px - 19px);
   box-sizing: border-box;
   background-color: white;
-  overflow: hidden;
-  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#044063+0,07527e+100 */
-background: rgb(4,64,99); /* Old browsers */
-background: -moz-linear-gradient(45deg,  rgba(4,64,99,1) 0%, rgba(7,82,126,1) 100%); /* FF3.6-15 */
-background: -webkit-linear-gradient(45deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* Chrome10-25,Safari5.1-6 */
-background: linear-gradient(45deg,  rgba(4,64,99,1) 0%,rgba(7,82,126,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#044063', endColorstr='#07527e',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
-color: #4F92BA;
+  overflow: auto;
+  color: #044063;
+  max-height: 109px;
 }
 
 .comment__goToReddit-button {
   height: 19px;
-  background-color: #044063;
+  background-color: #dadada;
   margin: 0;
   text-align: center;
   font-size: 1em;
-  box-shadow: 0px -10px 20px 7px rgba(0, 0, 0, 0.19);
+  /* box-shadow: 0px -10px 20px 7px rgba(0, 0, 0, 0.19); */
 }
 
 .comment__goToReddit-button i {
@@ -545,9 +560,21 @@ color: #4F92BA;
   color: #096AA3;
 }
 
+.nsfw-tagged::after {
+  content: 'nsfw';
+  background-color: #FF3D00;
+  border-radius: 10px;
+  vertical-align: super;
+  font-size: 0.6em;
+  color: #07527e;
+  padding: 0 3px;
+  margin-left: 3px;
+  position: absolute;
+}
+
 @media only screen and (min-width: 768px) {
   .app {
-    padding: 6px;
+    /* padding: 6px; */
   }
 
   .subreddits-box {
@@ -564,7 +591,7 @@ color: #4F92BA;
     padding-top: 15px;
   }
   .item-container {
-    padding: 24px;
+    /* padding: 0px 8px; */
     width: 95%;
   }
   .item {

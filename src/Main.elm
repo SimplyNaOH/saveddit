@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import App
 import Html exposing (Html, button, input, div, body, text, img, a, ul, li, p, span, select, option, h1, i, h2)
-import Html.Attributes exposing (style, class, classList, src, height, width, href, target, attribute, id)
+import Html.Attributes exposing (style, class, classList, src, height, width, href, target, attribute, id, value)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Json
 import Json.Decode exposing (field, string, bool, list, oneOf, int)
@@ -375,8 +375,8 @@ view model =
                     ]
                 ]
                 [ text <| "Logged in as " ++ username model ]
-            , select [ onInput <| (\i -> AppMsg (App.SetSliceLength i)) << Result.withDefault 10 << (Json.decodeString int) ]
-                [ option [ onClick <| AppMsg (App.SetSliceLength 5) ] [ text "5" ]
+            , select [ onInput <| (\i -> AppMsg (App.SetSliceLength i)) << Result.withDefault 10 << (Json.decodeString int), value <| toString model.app.sliceLength ]
+                [ option [] [ text "5" ]
                 , option [] [ text "10" ]
                 , option [] [ text "15" ]
                 , option [] [ text "25" ]

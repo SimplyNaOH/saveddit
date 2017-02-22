@@ -1,7 +1,5 @@
 module App exposing (..)
 
-import AOS exposing (..)
-
 import List exposing (length)
 
 import SearchableMenu as Menu
@@ -114,7 +112,7 @@ update msg model =
   in
   case msg of
   AddItems items -> ({ model | items = model.items ++ items }
-                    , refreshAOS ()) |> andThen update UpdateSubreddits
+                    , Cmd.none) |> andThen update UpdateSubreddits
   UpdateSubreddits ->
     ( { model | subreddits = subsFromItems model.items }
     , Cmd.none )
@@ -135,13 +133,13 @@ update msg model =
                  startAt = if (model.startAt + model.sliceLength) > length (filtered model) - 1
                            then model.startAt
                            else model.startAt + model.sliceLength }
-               , refreshAOS ())
+               , Cmd.none)
   PrevSlice -> ({ model |
                  startAt = max 0 <| model.startAt - model.sliceLength}
-               , refreshAOS ())
+               , Cmd.none)
   SetSliceLength len -> ({ model | sliceLength = len
                                 , startAt = model.startAt % len}
-                        , refreshAOS ())
+                        , Cmd.none)
   MenuMsg msg ->
     let
       config = { textboxId = "myId", onSelectMsg = ToggleSubreddit, toId = .subreddit }
@@ -165,15 +163,24 @@ filtered model =
   in
     List.filter (\item -> isInFilteredSub item && checkNSFW item) model.items
 
+subredditButton sub = p [class "item__subreddit"]
+                        [a [href <| "https://reddit.com/r/" ++ sub, target "_blank"] <|
+                           [ span [class "item__subreddit-prefix"]
+                                     [text "/r/"]
+                           , text sub
+                           ]
+                        ]
+
+
 linkView link =
   [ div [class "link__preview-container"]
         [a [href link.url, target "_blank"]
            [img [class "link__preview-img", src link.previewURL] []]
         ]
   , div [class "link-content"]
-        [ p [class "item__subreddit"] [text link.subreddit]
-        , h1 [class "link__title"] [a [href link.url, target "_blank"]
-                                      [text link.title]]
+        [ subredditButton link.subreddit
+        , h1 [class "link__title"] [a [href link.url, target "_blank"] <|
+                                      [text link.title] ++ if link.over18 then [span [class "nsfw-tagged"] []] else []]
         ]
   , ul [class "link__button-bar"]
        [ li []
@@ -193,11 +200,10 @@ linkView link =
 
 commentView comment =
   [ div [class "comment__title-bar"]
-        [ span [] [i [class "fa fa-commenting", attribute "aria-hidden" "true"] [a [href comment.url] []]]
-        , div [] [ p [class "item__subreddit"] [text comment.subreddit]
-                 , h1 [class "comment__title"]
-                      [a [href comment.linkURL] [text comment.title]]
-                 ]
+        [ subredditButton comment.subreddit
+        , h1 [class "comment__title"]
+             [a [href comment.linkURL] <| [text comment.title] ++ if comment.over18 then [span [class "nsfw-tagged"] []] else []]
+        , span [] [i [class "fa fa-commenting", attribute "aria-hidden" "true"] [a [href comment.url] []]]
         ]
   , div [class "comment__body"] [text comment.body]
   , p [class "comment__goToReddit-button"]
@@ -211,8 +217,9 @@ commentView comment =
 
 itemView i item =
   let
-    idWithClass c = if i == 0 then [class <| "item " ++ c, id "firstitem"]
-                              else [class <| "item " ++ c]
+    baseclass = if isNSFW item then "item-nsfw " else "item "
+    idWithClass c = if i == 0 then [class <| baseclass ++ c, id "firstitem"]
+                              else [class <| baseclass ++ c]
   in
     case item of
       Link link -> (link.id, li (idWithClass "link") <| linkView link)
@@ -222,7 +229,7 @@ itemsView model = Keyed.ul [class "item-container"] <| List.indexedMap itemView 
   List.take model.sliceLength <| List.drop model.startAt <| filtered model
 
 pagination model =
-  div [class "pagination", attribute "data-aos" "zoom-out", attribute "data-aos-anchor-placement" "center-bottom"]
+  div [class "pagination"]
   [ a [ class "pagination__prev-button", onClick PrevSlice, href "#0"] [text "<"]
   , span [class "pagination__counter"]
     [text <| (toString <| model.startAt // model.sliceLength + 1) ++ "/" ++ (toString <| 1+ length (filtered model) // model.sliceLength )]
@@ -231,22 +238,29 @@ pagination model =
 
 filtersView model =
   let
+    checkNSFW sub = not <| not model.showNSFW && (sub.over18 == NSFW)
     filterView sub =
       [(sub, li [] [a [href "#0"
         , class "active-box__sub"
         , onClick <| ToggleSubreddit sub
-        , onMouseEnter <| MenuMsg <| Menu.SetMouseOver True
-        , onMouseLeave <| MenuMsg <| Menu.SetMouseOver False
+        --, onMouseEnter <| MenuMsg <| Menu.SetMouseOver True
+        --, onMouseLeave <| MenuMsg <| Menu.SetMouseOver False
         ]
         [text sub]]
         )
       , (toString (sub ++ "-sep"), text " ")
       ]
 
+    classes isSelected sub = classList [ ("subreddits-menu__subreddit", True)
+                                       , ("subreddits-menu--selected", isSelected)
+                                       , ("subreddits-menu__subreddit--active", List.member sub.subreddit model.filters)
+                                       , ("nsfw-tagged", sub.over18 == NSFW)
+                                       ]
+
     config = { toId = .subreddit
       , div = \isOpen -> if isOpen then [class "subreddits-menu"] else [ class "subreddits-menu subreddits-menu--collapsed"]
       , ul = [class "subreddits-menu__list"]
-      , li = \isSelected result -> Menu.HtmlDetails [] [a ((if isSelected then class "subreddits-menu__subreddit subreddits-menu--selected" else class "subreddits-menu__subreddit") :: [href "#0", onClick <| Menu.Select (.subreddit << Tuple.second <| result), onBlur Menu.LostFocus, onFocus Menu.Open]) (Menu.simpleSpanView [class "subreddits-menu__match"] result) ]
+      , li = \isSelected result -> Menu.HtmlDetails [] [a ((classes isSelected (Tuple.second result)) :: [href "#0", onClick <| Menu.Select (.subreddit << Tuple.second <| result), onBlur Menu.LostFocus, onFocus Menu.Open]) (Menu.simpleSpanView [class "subreddits-menu__match"] result) ]
       , input = [class "subreddits-menu__input", placeholder "Add a subreddit"]
       , prepend = Nothing
       , append = Just <| {
@@ -260,16 +274,14 @@ filtersView model =
       , span [] [a [classList [("filter-box__clear-all-button", True), ("filter-box__clear-all-button--hidden", List.isEmpty model.filters)], href "#0", onClick ClearFilters] [text "clear-all"]]
       ,  Keyed.ul [classList [("active-box", True), ("active-box--no-active", List.isEmpty model.filters)]]
              (List.concatMap filterView model.filters)
-      ] ++ [Html.map MenuMsg <| Menu.view config model.menu model.subreddits]
+      ] ++ [Html.map MenuMsg <| Menu.view config model.menu <| List.filter (checkNSFW) model.subreddits]
 
 
 view : Model -> Html.Html Msg
 view model =
   let
-    debugString = "Loaded " ++ (toString <| List.length model.items) ++ " posts. Filtered " ++ (toString <| List.length <| filtered model) ++ "."
-
     itemView : { a | subreddit : String }  -> List (Html.Html Never)
     itemView = flip (::) [] << text << .subreddit
     --config = { openDivClass = "active-box", closedDivClass = "active-box subreddits-box--collapsed", olClass = "subreddits-box", liClass = "subreddits-box__subreddit", liView = itemView, textboxClass = "active-box__input", textboxId = "myId", textboxPlaceholder = "Search subreddits", toId = .subreddit}
   in
-      div [class "app"] [text debugString, filtersView model , pagination model, itemsView model, pagination model]
+      div [class "app"] [filtersView model , pagination model, itemsView model, pagination model]

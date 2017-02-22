@@ -7,8 +7,6 @@
   <link rel="stylesheet" type="text/css" href="main.css">
   <link rel="stylesheet" type="text/css" href="app.css">
   <link href="https://fonts.googleapis.com/css?family=Open+Sans|Roboto" rel="stylesheet">
-  <link href="https://cdn.rawgit.com/michalsnik/aos/2.1.1/dist/aos.css" rel="stylesheet">
-  <script src="https://cdn.rawgit.com/michalsnik/aos/2.1.1/dist/aos.js"></script>
   <script src="https://use.fontawesome.com/8af61632c9.js"></script>
 </head>
 <body>
@@ -18,13 +16,6 @@
 /*    var node = document.getElementById('main');*/
 /*    var app = Elm.Main.embed(node);*/
     var app = Elm.Main.fullscreen();
-    AOS.init({
-      easing: 'ease-out-back',
-      duration: 600
-     });
-    app.ports.refreshAOS.subscribe(function(){
-      setTimeout( function() { AOS.refresh();}, 200 );
-    });
   </script>
 </body>
 </html>
