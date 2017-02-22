@@ -12,9 +12,9 @@ import Dict exposing (Dict)
 import Maybe exposing (withDefault)
 import Time exposing (Time)
 import Http
-
 import Task
 import Process
+
 
 -- Model
 
@@ -70,20 +70,31 @@ initialModel =
 err model errorCode error =
     { model | errors = ( errorCode, error ) :: model.errors, newErrorsToShow = True }
 
+
 loginData : Model -> Maybe LoginData
-loginData model = case model.loginState of
-  NoLogin -> Nothing
-  GotToken data -> Just data
-  LoggedIn data -> Just data
+loginData model =
+    case model.loginState of
+        NoLogin ->
+            Nothing
+
+        GotToken data ->
+            Just data
+
+        LoggedIn data ->
+            Just data
+
 
 token : Model -> Maybe Token
-token = Maybe.map .token << loginData
+token =
+    Maybe.map .token << loginData
+
 
 type alias RedditResponse =
     { headers : Dict String String
     , items : List App.Item
     , after : String
     }
+
 
 
 -- UPDATE
@@ -221,15 +232,19 @@ update msg model =
                 { newModel | app = updatedApp, numRetries = 0 } ! [ Cmd.map AppMsg appCmd, newRequestCmd ]
 
         RequestResponse (Err htmlError) ->
-            if model.numRetries < 5
-            then ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
-                 , Maybe.withDefault Cmd.none <|
-                     Maybe.map (\data -> delayedCmd Time.second <| Http.send RequestResponse <|
-                         savedRequest data.token data.username model.lastAfter)
-                         (loginData model)
-                 )
+            if model.numRetries < 5 then
+                ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
+                , Maybe.withDefault Cmd.none <|
+                    Maybe.map
+                        (\data ->
+                            delayedCmd Time.second <|
+                                Http.send RequestResponse <|
+                                    savedRequest data.token data.username model.lastAfter
+                        )
+                        (loginData model)
+                )
             else
-              ( err initialModel networkError "An error occurred while retrieving your saved posts, please try again in a few minutes.", Cmd.none )
+                ( err initialModel networkError "An error occurred while retrieving your saved posts, please try again in a few minutes.", Cmd.none )
 
         MakeRequest ->
             case model.loginState of
@@ -264,14 +279,14 @@ update msg model =
                     )
 
         UsernameResponse (Err htmlError) ->
-            if model.numRetries < 5
-            then ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
-                 , Maybe.withDefault Cmd.none <|
-                     Maybe.map (\token -> delayedCmd Time.second <| Http.send UsernameResponse (usernameRequest token))
-                         (token model)
-                 )
+            if model.numRetries < 5 then
+                ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
+                , Maybe.withDefault Cmd.none <|
+                    Maybe.map (\token -> delayedCmd Time.second <| Http.send UsernameResponse (usernameRequest token))
+                        (token model)
+                )
             else
-              ( err initialModel networkError "An error occurred while retrieving your username, please try again in a few minutes." , Cmd.none )
+                ( err initialModel networkError "An error occurred while retrieving your username, please try again in a few minutes.", Cmd.none )
 
         AppMsg msg ->
             let
@@ -284,10 +299,11 @@ update msg model =
             processLocation location model
 
         CloseErrors ->
-            ( {model | newErrorsToShow = False }, Cmd.none)
+            ( { model | newErrorsToShow = False }, Cmd.none )
 
         ExecuteDelayedCmd cmd ->
             ( model, cmd )
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -331,7 +347,7 @@ loginPrompt model =
     div
         [ classList
             [ ( "login-prompt", True )
-            , ( "login-prompt--access-denied", List.any (\(code, _) -> code == accessDenied) model.errors)
+            , ( "login-prompt--access-denied", List.any (\( code, _ ) -> code == accessDenied) model.errors )
             , ( "login-prompt--got-token", gotToken model || isLoggedIn model )
             , ( "login-prompt--logged-in", isLoggedIn model )
             , ( "login-prompt--hidden", model.loadedData )
@@ -339,8 +355,8 @@ loginPrompt model =
         ]
         [ img [ class "login-prompt__logo", src "resources/logo.png" ] []
         , h1 [ class "login-prompt__login-button" ] [ a [ href accessRequestUrl ] [ text "Login with Reddit" ] ]
-                , h2 [ class "login-prompt__denied"]
-                  [ text "Access to reddit was denied"]
+        , h2 [ class "login-prompt__denied" ]
+            [ text "Access to reddit was denied" ]
         , h2 [ class "login-prompt__welcome" ]
             [ text "Hello "
             , span [ class "login-prompt__username" ]
@@ -349,16 +365,18 @@ loginPrompt model =
             ]
         , i [ class "login-prompt__loading-animation fa fa-spinner fa-pulse fa-3x" ] []
         , p [ class "login-prompt__loading" ] [ text <| "Loading data... " ++ (toString <| List.length model.app.items) ++ " posts." ]
-
         ]
 
+
 errorPrompt model =
-    div [class "error-prompt"]
-        [ a [href "#0", onClick <| CloseErrors] [i [class "fa fa-times-circle"] []]
+    div [ class "error-prompt" ]
+        [ a [ href "#0", onClick <| CloseErrors ] [ i [ class "fa fa-times-circle" ] [] ]
         , ul [] <|
-             List.map (\(code, string) ->
-                 li [] [text <| (toString code) ++ ": " ++ string ]
-                 ) model.errors
+            List.map
+                (\( code, string ) ->
+                    li [] [ text <| (toString code) ++ ": " ++ string ]
+                )
+                model.errors
         ]
 
 
@@ -384,7 +402,11 @@ view model =
             , a [ href "#0", onClick <| AppMsg App.ToggleNSFW ] [ text "Toggle NSFW" ]
             ]
         , Html.map AppMsg (App.view model.app)
-        ] ++ if model.newErrorsToShow then [errorPrompt model] else []
+        ]
+            ++ if model.newErrorsToShow then
+                [ errorPrompt model ]
+               else
+                []
 
 
 
@@ -392,15 +414,16 @@ view model =
 
 
 decodeSelf =
-      field "data" <|
-          Json.map7 App.CommentInfo
-              (field "id" string)
-              (field "title" string)
-              (field "url" string)
-              (field "url" string)
-              (field "selftext" string)
-              (field "subreddit" string)
-              (field "over_18" bool)
+    field "data" <|
+        Json.map7 App.CommentInfo
+            (field "id" string)
+            (field "title" string)
+            (field "url" string)
+            (field "url" string)
+            (field "selftext" string)
+            (field "subreddit" string)
+            (field "over_18" bool)
+
 
 decodeComment =
     field "data" <|
@@ -463,23 +486,24 @@ decodeLink =
 decodeItem =
     field "kind" string
         |> Json.andThen
-                (\kind ->
-                    case kind of
-                        "t1" ->
-                            Json.map App.Comment decodeComment
+            (\kind ->
+                case kind of
+                    "t1" ->
+                        Json.map App.Comment decodeComment
 
-                        "t3" ->
-                          Json.at ["data", "is_self"] bool
+                    "t3" ->
+                        Json.at [ "data", "is_self" ] bool
                             |> Json.andThen
-                              (\isSelf ->
-                                if isSelf
-                                  then Json.map App.Comment decodeSelf
-                                  else Json.map App.Link decodeLink
-                              )
+                                (\isSelf ->
+                                    if isSelf then
+                                        Json.map App.Comment decodeSelf
+                                    else
+                                        Json.map App.Link decodeLink
+                                )
 
-                        _ ->
-                            Json.fail "kind is not t1 or t3"
-                )
+                    _ ->
+                        Json.fail "kind is not t1 or t3"
+            )
 
 
 decodeItems =
@@ -512,8 +536,7 @@ savedRequest token username after =
     Http.request
         { method = "GET"
         , headers =
-            [
-              Http.header "Authorization" ("bearer " ++ token)
+            [ Http.header "Authorization" ("bearer " ++ token)
             ]
         , url =
             "https://oauth.reddit.com/user/"
@@ -542,6 +565,7 @@ usernameRequest token =
         }
 
 
+
 -- app
 
 
@@ -559,11 +583,15 @@ main =
         }
 
 
+
 -- Helper
 
+
 delayedCmd : Time -> Cmd Msg -> Cmd Msg
-delayedCmd delay cmd = Task.perform (\cmd -> ExecuteDelayedCmd cmd) <|
-    Task.map (Cmd.batch) <|
-      Task.sequence [ Task.map (always Cmd.none) <| Process.sleep delay
-                  , Task.succeed cmd
-                  ]
+delayedCmd delay cmd =
+    Task.perform (\cmd -> ExecuteDelayedCmd cmd) <|
+        Task.map (Cmd.batch) <|
+            Task.sequence
+                [ Task.map (always Cmd.none) <| Process.sleep delay
+                , Task.succeed cmd
+                ]
