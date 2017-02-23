@@ -148,3 +148,36 @@ body {
   margin: 0;
   padding: 10px;
 }
+
+.footer {
+    z-index: 3000;
+    position: relative;
+    text-align: center;
+    background-color: #ff8c00;
+}
+
+.privacy-policy {
+    z-index: 3000;
+    position: fixed;
+    top: 10px;
+    width: 90%;
+    left: 5%;
+    bottom: 10px;
+}
+
+.privacy-policy iframe {
+    width: 100%;
+    height: calc(100% - 23px);
+    border: none;
+    background-color: white;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.privacy-policy a {
+    background-color: #ff8c00;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    width: 100%;
+}

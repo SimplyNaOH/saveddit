@@ -11750,6 +11750,40 @@ var _simplynaoh$saveddit$Main$savedRequest = F3(
 				withCredentials: false
 			});
 	});
+var _simplynaoh$saveddit$Main$privacyPolicy = A2(
+	_elm_lang$html$Html$div,
+	{
+		ctor: '::',
+		_0: _elm_lang$html$Html_Attributes$class('privacy-policy'),
+		_1: {ctor: '[]'}
+	},
+	{
+		ctor: '::',
+		_0: A2(
+			_elm_lang$html$Html$iframe,
+			{
+				ctor: '::',
+				_0: _elm_lang$html$Html_Attributes$src('privacy-policy.html'),
+				_1: {ctor: '[]'}
+			},
+			{ctor: '[]'}),
+		_1: {
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$a,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$href('#app'),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('Close'),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		}
+	});
 var _simplynaoh$saveddit$Main$gotToken = function (model) {
 	var _p2 = model.loginState;
 	if (_p2.ctor === 'GotToken') {
@@ -11994,9 +12028,9 @@ var _simplynaoh$saveddit$Main$LoginData = F3(
 	function (a, b, c) {
 		return {token: a, expire: b, username: c};
 	});
-var _simplynaoh$saveddit$Main$Model = F7(
-	function (a, b, c, d, e, f, g) {
-		return {app: a, loginState: b, loadedData: c, errors: d, newErrorsToShow: e, numRetries: f, lastAfter: g};
+var _simplynaoh$saveddit$Main$Model = F8(
+	function (a, b, c, d, e, f, g, h) {
+		return {app: a, loginState: b, loadedData: c, errors: d, newErrorsToShow: e, numRetries: f, lastAfter: g, showPrivacyPolicy: h};
 	});
 var _simplynaoh$saveddit$Main$RedditResponse = F3(
 	function (a, b, c) {
@@ -12009,7 +12043,7 @@ var _simplynaoh$saveddit$Main$GotToken = function (a) {
 	return {ctor: 'GotToken', _0: a};
 };
 var _simplynaoh$saveddit$Main$NoLogin = {ctor: 'NoLogin'};
-var _simplynaoh$saveddit$Main$initialModel = A7(
+var _simplynaoh$saveddit$Main$initialModel = A8(
 	_simplynaoh$saveddit$Main$Model,
 	_simplynaoh$saveddit$App$initialModel,
 	_simplynaoh$saveddit$Main$NoLogin,
@@ -12017,7 +12051,8 @@ var _simplynaoh$saveddit$Main$initialModel = A7(
 	{ctor: '[]'},
 	false,
 	0,
-	'');
+	'',
+	false);
 var _simplynaoh$saveddit$Main$NoOp = {ctor: 'NoOp'};
 var _simplynaoh$saveddit$Main$ExecuteDelayedCmd = function (a) {
 	return {ctor: 'ExecuteDelayedCmd', _0: a};
@@ -12275,7 +12310,33 @@ var _simplynaoh$saveddit$Main$view = function (model) {
 							_elm_lang$html$Html$map,
 							_simplynaoh$saveddit$Main$AppMsg,
 							_simplynaoh$saveddit$App$view(model.app)),
-						_1: {ctor: '[]'}
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html$div,
+								{
+									ctor: '::',
+									_0: _elm_lang$html$Html_Attributes$class('footer'),
+									_1: {ctor: '[]'}
+								},
+								{
+									ctor: '::',
+									_0: A2(
+										_elm_lang$html$Html$a,
+										{
+											ctor: '::',
+											_0: _elm_lang$html$Html_Attributes$href('#privacy-policy'),
+											_1: {ctor: '[]'}
+										},
+										{
+											ctor: '::',
+											_0: _elm_lang$html$Html$text('Privacy policy'),
+											_1: {ctor: '[]'}
+										}),
+									_1: {ctor: '[]'}
+								}),
+							_1: {ctor: '[]'}
+						}
 					}
 				}
 			},
@@ -12283,7 +12344,14 @@ var _simplynaoh$saveddit$Main$view = function (model) {
 				ctor: '::',
 				_0: _simplynaoh$saveddit$Main$errorPrompt(model),
 				_1: {ctor: '[]'}
-			} : {ctor: '[]'}));
+			} : A2(
+				_elm_lang$core$Basics_ops['++'],
+				{ctor: '[]'},
+				model.showPrivacyPolicy ? {
+					ctor: '::',
+					_0: _simplynaoh$saveddit$Main$privacyPolicy,
+					_1: {ctor: '[]'}
+				} : {ctor: '[]'})));
 };
 var _simplynaoh$saveddit$Main$UsernameResponse = function (a) {
 	return {ctor: 'UsernameResponse', _0: a};
@@ -12585,7 +12653,19 @@ var _simplynaoh$saveddit$Main$update = F2(
 					_1: A2(_elm_lang$core$Platform_Cmd$map, _simplynaoh$saveddit$Main$AppMsg, appCmd)
 				};
 			case 'LocChange':
-				return A2(_simplynaoh$saveddit$Main$processLocation, _p16._0, model);
+				var _p28 = _p16._0;
+				return _elm_lang$core$Native_Utils.eq(_p28.hash, '#privacy-policy') ? {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{showPrivacyPolicy: true}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				} : A2(
+					_simplynaoh$saveddit$Main$processLocation,
+					_p28,
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{showPrivacyPolicy: false}));
 			case 'CloseErrors':
 				return {
 					ctor: '_Tuple2',

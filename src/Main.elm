@@ -17,7 +17,7 @@
 module Main exposing (..)
 
 import App
-import Html exposing (Html, button, input, div, body, text, img, a, ul, li, p, span, select, option, h1, i, h2)
+import Html exposing (Html, button, input, div, body, text, img, a, ul, li, p, span, select, option, h1, i, h2, iframe)
 import Html.Attributes exposing (style, class, classList, src, height, width, href, target, attribute, id, value)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Json
@@ -80,11 +80,12 @@ type alias Model =
     , newErrorsToShow : Bool
     , numRetries : Int
     , lastAfter : String
+    , showPrivacyPolicy : Bool
     }
 
 
 initialModel =
-    Model App.initialModel NoLogin False [] False 0 ""
+    Model App.initialModel NoLogin False [] False 0 "" False
 
 
 loginData : Model -> Maybe LoginData
@@ -315,7 +316,9 @@ update msg model =
                 ( { model | app = updatedApp }, Cmd.map AppMsg appCmd )
 
         LocChange location ->
-            processLocation location model
+            if location.hash == "#privacy-policy"
+            then ( { model | showPrivacyPolicy = True }, Cmd.none )
+            else processLocation location { model | showPrivacyPolicy = False }
 
         CloseErrors ->
             ( { model | newErrorsToShow = False }, Cmd.none )
@@ -402,6 +405,10 @@ errorPrompt model =
                 model.errors
         ]
 
+privacyPolicy = div [ class "privacy-policy" ]
+                    [ iframe [ src "privacy-policy.html" ] []
+                    , a [ href "#app" ] [ text "Close" ]
+                    ]
 
 view : Model -> Html.Html Msg
 view model =
@@ -425,9 +432,14 @@ view model =
             , a [ href "#0", onClick <| AppMsg App.ToggleNSFW ] [ text "Toggle NSFW" ]
             ]
         , Html.map AppMsg (App.view model.app)
+        , div [class "footer"] [a [href "#privacy-policy"] [text "Privacy policy"]]
         ]
             ++ if model.newErrorsToShow then
                 [ errorPrompt model ]
+               else
+                []
+            ++ if model.showPrivacyPolicy then
+                [ privacyPolicy ]
                else
                 []
 
