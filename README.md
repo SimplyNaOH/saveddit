@@ -1,6 +1,12 @@
 # Saveddit
 ###### View and filter your reddit saved posts
 
+## UPDATE 2017/03/20
+
+**There's a major refactor coming up in the
+[refactor branch](https://github.com/SimplyNaOH/saveddit/tree/refactor). If you
+are considering contributing to this project, you should start there!**
+
 ## Introduction
 
 This is an elm web-app that, once you give it access to your reddit account,
