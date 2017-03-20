@@ -1,330 +1,179 @@
 {-
-    Copyright (C) 2017  SimplyNaOH
+   Copyright (C) 2017  SimplyNaOH
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
+{- | This is the main module of the app. Here we route the SPA. Since at this
+   stage this will be deployed to Github Pages, and we can't control the server,
+   we will use Hash navigation for pages, and queries for options within a page.
+-}
+
+
 module Main exposing (..)
 
-import App
-import Html exposing (Html, button, input, div, body, text, img, a, ul, li, p, span, select, option, h1, i, h2, iframe)
-import Html.Attributes exposing (style, class, classList, src, height, width, href, target, attribute, id, value)
-import Html.Events exposing (onClick, onInput)
+import Debug exposing (log)
+import RouteUrl exposing (program, UrlChange)
+import Navigation exposing (Location)
+import UrlParser as Url
+import UrlParser exposing ((</>), (<?>))
+import RouteUrl.Builder as Builder
+
+
+-- Html stuff
+
+import Html exposing (div, text)
 import Json.Decode as Json
-import Json.Decode exposing (field, string, bool, list, oneOf, int)
-import Navigation
-import Regex exposing (regex)
-import Dict exposing (Dict)
-import Maybe exposing (withDefault)
-import Time exposing (Time)
-import Http
+import Dict
+import Result.Extra as Result
+import App.Model as App
+import App.Update as App
+import App.View as App
+import RedditAPI.Session as RedditAPI
+import RedditAPI.Update as RedditAPI
+import RedditAPI.Requests as RedditAPI
+import RedditAPI.Types as RedditAPI
+
+
+-- ################## debug
+
 import Task
+import Http
 import Process
+import Time exposing (Time)
 
 
 -- Model
+-- | A page within the SPA
 
 
-type alias Token =
-    String
+type Page
+    = Landing
+    | App
+    | PrivacyPolicy
+    | TermsOfUse
+      -- not implemented yet
+    | NotFound String
 
 
-type alias LoginData =
-    { token : Token
-    , expire : Time
-    , username : String
-    }
 
+{- | In the model we keep track of the current page, and the app state/model. -}
 
-type LoginState
-    = NoLogin
-    | GotToken LoginData
-    | LoggedIn LoginData
-
-
-type alias ErrorCode =
-    Int
-
-accessDenied : ErrorCode
-accessDenied =
-    0
-
-networkError : ErrorCode
-networkError =
-    1
-
-unhandledError : ErrorCode
-unhandledError =
-    2
-
-
-err : Model -> ErrorCode -> String -> Model
-err model errorCode error =
-    { model | errors = ( errorCode, error ) :: model.errors, newErrorsToShow = True }
 
 type alias Model =
-    { app : App.Model
-    , loginState : LoginState
+    { currentPage : Page
+    , app : App.Model
+    , session : RedditAPI.Session
+    , now : Time
+    , waitingForNow : List Msg
     , loadedData : Bool
-    , errors : List ( ErrorCode, String )
-    , newErrorsToShow : Bool
-    , numRetries : Int
-    , lastAfter : String
-    , showPrivacyPolicy : Bool
+    , debug : List String
     }
 
 
 initialModel =
-    Model App.initialModel NoLogin False [] False 0 "" False
-
-
-loginData : Model -> Maybe LoginData
-loginData model =
-    case model.loginState of
-        NoLogin ->
-            Nothing
-
-        GotToken data ->
-            Just data
-
-        LoggedIn data ->
-            Just data
-
-
-token : Model -> Maybe Token
-token =
-    Maybe.map .token << loginData
-
-
-type alias RedditResponse =
-    { headers : Dict String String
-    , items : List App.Item
-    , after : String
-    }
+    { currentPage = Landing, app = App.initialModel, session = RedditAPI.emptySession, now = 0, waitingForNow = [], loadedData = False, debug = [] }
 
 
 
--- UPDATE
+-- Update
 
 
 type Msg
-    = RequestResponse (Result Http.Error RedditResponse)
-    | MakeRequest
-    | UsernameResponse (Result Http.Error String)
+    = SetPage Page
     | AppMsg App.Msg
-    | LocChange Navigation.Location
-    | CloseErrors
-    | ExecuteDelayedCmd (Cmd Msg)
+    | APIMsg (RedditAPI.Msg Msg)
+    | SetNow Time
+    | DataResponse (Result Http.Error RedditAPI.RedditResponse)
+    | Debug String
     | NoOp
-
-
-processLocation : Navigation.Location -> Model -> ( Model, Cmd Msg )
-processLocation location model =
-    let
-        findOne =
-            Regex.AtMost 1
-
-        {- | extracts a parameter from a URL (things like "p1=v1&p2=v2...",
-        give it "p1" and it will maybe give you "v1")
-        -}
-        parameter name =
-            Maybe.map (String.dropLeft (String.length name + 1)) <|
-                Maybe.map .match <|
-                    List.head <|
-                        Regex.find findOne
-                            (regex <| name ++ "=[^&]*")
-                            location.hash
-
-        maybeError =
-            parameter "error"
-
-        maybeToken =
-            parameter "token"
-
-        maybeExpire =
-            Maybe.map toFloat <|
-                Maybe.andThen (Result.toMaybe << Json.decodeString Json.int) <|
-                    parameter "expires_in"
-
-        maybeState =
-            parameter "state"
-
-        newModel token expire =
-            { model
-                | loginState =
-                    GotToken <|
-                        { token = token
-                        , expire = expire
-                        , username = ""
-                        }
-            }
-
-        getUsername token =
-            Http.send UsernameResponse (usernameRequest token)
-
-        login =
-            Maybe.map2
-                (\token expire ->
-                    ( newModel token expire, getUsername token )
-                )
-                maybeToken
-                maybeExpire
-    in
-        if model.loadedData then
-            ( model, Cmd.none )
-        else
-            case model.loginState of
-                LoggedIn _ ->
-                    ( model, Cmd.none )
-
-                GotToken _ ->
-                    ( model, Cmd.none )
-
-                NoLogin ->
-                    case login of
-                        Nothing ->
-                            case maybeError of
-                                Nothing ->
-                                    ( model, Cmd.none )
-
-                                Just "access_denied" ->
-                                    ( err model
-                                        accessDenied
-                                        "Access to your reddit account was denied"
-                                    , Cmd.none
-                                    )
-
-                                Just _ ->
-                                    ( err model
-                                        unhandledError
-                                        "Error while trying to login with reddit"
-                                    , Cmd.none
-                                    )
-
-                        Just newState ->
-                            newState
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        RequestResponse (Ok response) ->
+        SetPage newPage ->
+            ( { model | currentPage = newPage }, Cmd.none )
+
+        AppMsg appMsg ->
+            let
+                ( updatedApp, appCmd ) =
+                    App.update appMsg model.app
+            in
+                ( { model | app = updatedApp }, Cmd.map AppMsg appCmd )
+
+        APIMsg apiMsg ->
+            let
+                ( updatedSession, sessionCmd ) =
+                    RedditAPI.update model.now APIMsg apiMsg model.session
+
+                savedRequest =
+                    Maybe.withDefault Cmd.none <|
+                        Maybe.map (Task.attempt DataResponse) <|
+                            RedditAPI.savedRequest updatedSession ""
+
+                newCmd =
+                    case apiMsg of
+                        RedditAPI.UsernameResponse _ ->
+                            if not model.loadedData then
+                                savedRequest
+                            else
+                                Cmd.none
+
+                        _ ->
+                            Cmd.none
+            in
+                log ("Dispatching " ++ toString apiMsg ++ ". newCmd = " ++ toString newCmd) <|
+                    if model.now /= 0 then
+                        { model | session = updatedSession } ! [ sessionCmd, newCmd ]
+                    else
+                        ( { model | waitingForNow = model.waitingForNow ++ [ APIMsg apiMsg ] }, Cmd.none )
+
+        SetNow now ->
+            let
+                chainUpdate msg ( model, cmd ) =
+                    let
+                        ( newModel, newCmd ) =
+                            update msg model
+                    in
+                        newModel ! [ cmd, newCmd ]
+            in
+                List.foldl chainUpdate ( { model | now = now, waitingForNow = [] }, Cmd.none ) model.waitingForNow
+
+        DataResponse (Ok response) ->
             let
                 ( updatedApp, appCmd ) =
                     App.update (App.AddItems response.items) model.app
 
-                ( newModel, newRequestCmd ) =
-                    case model.loginState of
-                        NoLogin ->
-                            ( err model
-                                unhandledError
-                                "Error while trying to load data (no login data)"
-                            , Cmd.none
-                            )
+                savedRequest =
+                    Maybe.withDefault Cmd.none <|
+                        Maybe.map (Task.attempt DataResponse) <|
+                            RedditAPI.savedRequest model.session response.after
 
-                        GotToken _ ->
-                            ( err model
-                                unhandledError
-                                "Error while trying to load data (no login data)"
-                            , Cmd.none
-                            )
-
-                        LoggedIn data ->
-                            if List.length response.items == 100 then
-                                ( model
-                                , Http.send RequestResponse <|
-                                    savedRequest data.token data.username response.after
-                                )
-                            else
-                                ( { model | loadedData = True }, Cmd.none )
+                ( newModel, newCmd ) =
+                    if List.length response.items == 100 then
+                        ( model, savedRequest )
+                    else
+                        ( { model | loadedData = True }, Cmd.none )
             in
                 -- TODO check (Dict.get "x-ratelimit-remaining" response.headers)
-                { newModel | app = updatedApp, numRetries = 0 } ! [ Cmd.map AppMsg appCmd, newRequestCmd ]
+                { newModel | app = updatedApp, loadedData = True } ! [ Cmd.map AppMsg appCmd, newCmd ]
 
-        RequestResponse (Err htmlError) ->
-            if model.numRetries < 5 then
-                ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
-                , Maybe.withDefault Cmd.none <|
-                    Maybe.map
-                        (\data ->
-                            delayedCmd Time.second <|
-                                Http.send RequestResponse <|
-                                    savedRequest data.token data.username model.lastAfter
-                        )
-                        (loginData model)
-                )
-            else
-                ( err initialModel networkError "An error occurred while retrieving your saved posts, please try again in a few minutes.", Cmd.none )
+        DataResponse (Err error) ->
+            update (Debug <| toString error) model
 
-        MakeRequest ->
-            case model.loginState of
-                NoLogin ->
-                    ( err model unhandledError "Tried to retrieve data with no login.", Cmd.none )
-
-                GotToken _ ->
-                    ( err model unhandledError "Tried to retrieve data with no username.", Cmd.none )
-
-                LoggedIn data ->
-                    ( model
-                    , Http.send RequestResponse <|
-                        savedRequest data.token data.username ""
-                    )
-
-        UsernameResponse (Ok username) ->
-            case model.loginState of
-                GotToken data ->
-                    ( { model | loginState = LoggedIn { data | username = username }, numRetries = 0 }
-                    , if not model.loadedData then
-                        Http.send RequestResponse <|
-                            savedRequest data.token username ""
-                      else
-                        Cmd.none
-                    )
-
-                _ ->
-                    ( err model
-                        unhandledError
-                        "Trying to process UsernameResponse without token"
-                    , Cmd.none
-                    )
-
-        UsernameResponse (Err htmlError) ->
-            if model.numRetries < 5 then
-                ( err { model | numRetries = model.numRetries + 1 } networkError (toString htmlError)
-                , Maybe.withDefault Cmd.none <|
-                    Maybe.map (\token -> delayedCmd Time.second <| Http.send UsernameResponse (usernameRequest token))
-                        (token model)
-                )
-            else
-                ( err initialModel networkError "An error occurred while retrieving your username, please try again in a few minutes.", Cmd.none )
-
-        AppMsg msg ->
-            let
-                ( updatedApp, appCmd ) =
-                    App.update msg model.app
-            in
-                ( { model | app = updatedApp }, Cmd.map AppMsg appCmd )
-
-        LocChange location ->
-            if location.hash == "#privacy-policy"
-            then ( { model | showPrivacyPolicy = True }, Cmd.none )
-            else processLocation location { model | showPrivacyPolicy = False }
-
-        CloseErrors ->
-            ( { model | newErrorsToShow = False }, Cmd.none )
-
-        ExecuteDelayedCmd cmd ->
-            ( model, cmd )
+        Debug str ->
+            ( { model | debug = model.debug ++ [ str ] }, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -334,275 +183,135 @@ update msg model =
 -- View
 
 
--- The client_id and redirect_uri below are replaced in the build script
-accessRequestUrl =
-    "https://www.reddit.com/api/v1/authorize?response_type=token"
-        ++ "&client_id=ThisIsAMagicString"
-        ++ "&redirect_uri=ThisIsAMagicString"
-        ++ "&scope=history,identity&state=asdfghjkl" -- TODO actually generate and check the state parameter
-
-
-username model =
-    case model.loginState of
-        LoggedIn data ->
-            data.username
-
-        _ ->
-            ""
-
-
-isLoggedIn model =
-    case model.loginState of
-        LoggedIn _ ->
-            True
-
-        _ ->
-            False
-
-
-gotToken model =
-    case model.loginState of
-        GotToken _ ->
-            True
-
-        _ ->
-            False
-
-
-loginPrompt model =
-    div
-        [ classList
-            [ ( "login-prompt", True )
-            , ( "login-prompt--access-denied", List.any (\( code, _ ) -> code == accessDenied) model.errors )
-            , ( "login-prompt--got-token", gotToken model || isLoggedIn model )
-            , ( "login-prompt--logged-in", isLoggedIn model )
-            , ( "login-prompt--hidden", model.loadedData )
-            ]
-        ]
-        [ img [ class "login-prompt__logo", src "resources/logo.png" ] []
-        , h1 [ class "login-prompt__login-button" ] [ a [ href accessRequestUrl ] [ text "Login with Reddit" ] ]
-        , h2 [ class "login-prompt__denied" ]
-            [ text "Access to reddit was denied" ]
-        , h2 [ class "login-prompt__welcome" ]
-            [ text "Hello "
-            , span [ class "login-prompt__username" ]
-                [ text <| username model ]
-            , text "!"
-            ]
-        , i [ class "login-prompt__loading-animation fa fa-spinner fa-pulse fa-3x" ] []
-        , p [ class "login-prompt__loading" ] [ text <| "Loading data... " ++ (toString <| List.length model.app.items) ++ " posts." ]
-        ]
-
-
-errorPrompt model =
-    div [ class "error-prompt" ]
-        [ a [ href "#0", onClick <| CloseErrors ] [ i [ class "fa fa-times-circle" ] [] ]
-        , ul [] <|
-            List.map
-                (\( code, string ) ->
-                    li [] [ text <| (toString code) ++ ": " ++ string ]
-                )
-                model.errors
-        ]
-
-privacyPolicy = div [ class "privacy-policy" ]
-                    [ iframe [ src "privacy-policy.html" ] []
-                    , a [ href "#app" ] [ text "Close" ]
-                    ]
-
-view : Model -> Html.Html Msg
 view model =
-    div [ class "main-div" ] <|
-        [ loginPrompt model
-        , div [ class "top-bar" ]
-            [ img [ src "resources/logo.png" ] []
-            , span
-                [ classList
-                    [ ( "top-bar__username", True )
-                    , ( "top-bar__username--hiden", isLoggedIn model )
-                    ]
-                ]
-                [ text <| "Logged in as " ++ username model ]
-            , select [ onInput <| (\i -> AppMsg (App.SetSliceLength i)) << Result.withDefault 10 << (Json.decodeString int), value <| toString model.app.sliceLength ]
-                [ option [] [ text "5" ]
-                , option [] [ text "10" ]
-                , option [] [ text "15" ]
-                , option [] [ text "25" ]
-                ]
-            , a [ href "#0", onClick <| AppMsg App.ToggleNSFW ] [ text "Toggle NSFW" ]
-            ]
-        , Html.map AppMsg (App.view model.app)
-        , div [class "footer"] [a [href "#privacy-policy"] [text "Privacy policy"]]
+    div []
+        [ Html.map AppMsg <| App.view model.app
         ]
-            ++ if model.newErrorsToShow then
-                [ errorPrompt model ]
-               else
-                []
-            ++ if model.showPrivacyPolicy then
-                [ privacyPolicy ]
-               else
-                []
 
 
 
--- Commands
+-- Navigation
 
 
-decodeSelf =
-    field "data" <|
-        Json.map7 App.CommentInfo
-            (field "id" string)
-            (field "title" string)
-            (field "url" string)
-            (field "url" string)
-            (field "selftext" string)
-            (field "subreddit" string)
-            (field "over_18" bool)
+delta2url : Model -> Model -> Maybe UrlChange
+delta2url oldModel newModel =
+    let
+        page =
+            toString << .page << .app
 
+        filters =
+            .filters << .app
 
-decodeComment =
-    field "data" <|
-        Json.map7 App.CommentInfo
-            (field "id" string)
-            (field "link_title" string)
-            (Json.map4
-                (\a b c d ->
-                    "https://www.reddit.com/r/"
-                        ++ a
-                        ++ "/comments/"
-                        ++ (String.dropLeft 3 b)
-                        ++ "/"
-                        ++ c
-                        ++ "/"
-                        ++ d
-                        ++ "/"
+        username =
+            .username << .session
+
+        diff f =
+            if f oldModel /= f newModel then
+                Just
+            else
+                always Nothing
+
+        maybePageUpdate : Maybe (Builder.Builder -> Builder.Builder)
+        maybePageUpdate =
+            diff page <|
+                (\builder ->
+                    builder
+                        |> Builder.newEntry
+                        |> Builder.insertQuery "page" (page newModel)
                 )
-                (field "subreddit" string)
-                (field "link_id" string)
-                (field "link_title" string)
-                (field "id" string)
+
+        maybeUsernameUpdate =
+            diff username <|
+                (\builder ->
+                    builder
+                        |> Builder.modifyEntry
+                        |> Builder.insertQuery "username" (Maybe.withDefault "" <| username newModel)
+                )
+
+        updates =
+            [ maybePageUpdate, maybeUsernameUpdate ]
+
+        isNothing maybe =
+            case maybe of
+                Nothing ->
+                    True
+
+                Just _ ->
+                    False
+    in
+        if (List.isEmpty << List.filter (not << isNothing)) updates then
+            Nothing
+        else
+            Just <| Builder.toHashChange << List.foldl (\f acc -> f acc) Builder.builder << List.map (Maybe.withDefault identity) <| updates
+
+
+location2messages : Location -> List Msg
+location2messages location =
+    let
+        -- | This is necessary because reddit redirects to 'website.com/#access_token...'
+        hash =
+            if String.startsWith "#!/" location.hash then
+                location.hash
+            else
+                "#!/?" ++ String.dropLeft 1 location.hash
+
+        page =
+            (Maybe.withDefault Landing
+                << Maybe.map (stringToPage)
+                << List.head
+                << Builder.path
+                << Builder.fromHash
             )
-            (field "link_url" string)
-            (field "body" string)
-            (field "subreddit" string)
-            (field "over_18" bool)
+                hash
 
+        queries =
+            Builder.query << Builder.fromHash <| hash
 
-decodeThumbnail thumbnail =
-    if String.startsWith "https://" thumbnail then
-        Json.succeed thumbnail
-    else
-        case thumbnail of
-            "self" ->
-                Json.succeed "resources/self.png"
+        toMsgResults =
+            Dict.foldl (\q v l -> queryToMsg q v :: l) [] queries
 
-            _ ->
-                Json.oneOf [ Json.at [ "preview", "images", "0", "resolutions", "0", "url" ] string, Json.succeed "resources/noimage.png" ]
+        subMsgs =
+            List.filter ((/=) NoOp)
+                << List.map (Result.merge << Result.mapError (always NoOp))
+            <|
+                toMsgResults
 
+        tokenQueries =
+            Dict.filter (\query value -> query == "access_token" || query == "expires_in") queries
 
-decodeLink =
-    field "data" <|
-        Json.map8 App.LinkInfo
-            (field "id" string)
-            (field "title" string)
-            (field "url" string)
-            (Json.map ((++) "https://www.reddit.com") (field "permalink" string))
-            (field "thumbnail" string |> Json.andThen decodeThumbnail)
-            {- (oneOf
-                [ Json.at ["preview", "images", "0", "source", "url"] string
-                , field "thumbnail" string]
-               )
-            -}
-            (field "subreddit" string)
-            (field "num_comments" int)
-            (field "over_18" bool)
-
-
-decodeItem =
-    field "kind" string
-        |> Json.andThen
-            (\kind ->
-                case kind of
-                    "t1" ->
-                        Json.map App.Comment decodeComment
-
-                    "t3" ->
-                        Json.at [ "data", "is_self" ] bool
-                            |> Json.andThen
-                                (\isSelf ->
-                                    if isSelf then
-                                        Json.map App.Comment decodeSelf
-                                    else
-                                        Json.map App.Link decodeLink
-                                )
-
-                    _ ->
-                        Json.fail "kind is not t1 or t3"
-            )
-
-
-decodeItems =
-    Json.at [ "data", "children" ] (list decodeItem)
+        tokenMsg =
+            Result.merge
+                << Result.mapBoth (always NoOp) (APIMsg << RedditAPI.SetToken)
+            <|
+                Result.andThen
+                    (\res ->
+                        if res.token == "" || res.expire == 0 then
+                            Err "Failed to obtain queries"
+                        else
+                            Ok res
+                    )
+                <|
+                    Dict.foldl tokenQueriesToToken (Ok { token = "", expire = 0 }) tokenQueries
+    in
+        Debug ("Hash = " ++ location.hash ++ " corrected to " ++ hash) :: SetPage page :: tokenMsg :: subMsgs
 
 
 
--- TODO: Handle error here?
-htmlResponseToRedditResponse response =
-    Ok
-        { headers = response.headers
-        , items = Result.withDefault [] <| Json.decodeString decodeItems response.body
-        , after = Result.withDefault "" <| Json.decodeString (Json.at [ "data", "after" ] string) response.body
-        }
+-- Main
 
 
-savedRequest token username after =
-    Http.request
-        { method = "GET"
-        , headers =
-            [ Http.header "Authorization" ("bearer " ++ token)
-            ]
-        , url =
-            "https://oauth.reddit.com/user/"
-                ++ username
-                ++ "/saved.json?raw_json=1&limit=100"
-                ++ if after /= "" then
-                    "&after=" ++ after
-                   else
-                    ""
-        , body = Http.emptyBody
-        , expect = Http.expectStringResponse htmlResponseToRedditResponse
-        , timeout = Nothing
-        , withCredentials = False
-        }
-
-
-usernameRequest token =
-    Http.request
-        { method = "GET"
-        , headers = [ Http.header "Authorization" ("bearer " ++ token) ]
-        , url = "https://oauth.reddit.com/api/v1/me"
-        , body = Http.emptyBody
-        , expect = Http.expectJson (field "name" string)
-        , timeout = Nothing
-        , withCredentials = False
-        }
-
-
-
--- app
-
-
-init : Navigation.Location -> ( Model, Cmd Msg )
-init location =
-    processLocation location initialModel
+init =
+    ( initialModel, Task.perform SetNow Time.now )
 
 
 main =
-    Navigation.program (LocChange)
-        { init = init
-        , subscriptions = \x -> Sub.none
-        , view = view
+    program
+        { delta2url = delta2url
+        , location2messages = location2messages
+        , init = init
         , update = update
+        , subscriptions = always <| Time.every (30 * Time.second) SetNow
+        , view = view
         }
 
 
@@ -610,11 +319,50 @@ main =
 -- Helper
 
 
-delayedCmd : Time -> Cmd Msg -> Cmd Msg
-delayedCmd delay cmd =
-    Task.perform (\cmd -> ExecuteDelayedCmd cmd) <|
-        Task.map (Cmd.batch) <|
-            Task.sequence
-                [ Task.map (always Cmd.none) <| Process.sleep delay
-                , Task.succeed cmd
-                ]
+stringToPage str =
+    case str of
+        "app" ->
+            App
+
+        "privacy-policy" ->
+            PrivacyPolicy
+
+        "terms-of-use" ->
+            TermsOfUse
+
+        _ ->
+            NotFound str
+
+
+queryToMsg query value =
+    case query of
+        "page" ->
+            Result.map (AppMsg << App.SetPage) (Json.decodeString Json.int value)
+
+        "filtering" ->
+            Result.map (AppMsg << App.SetFilters) (Json.decodeString (Json.list Json.string) value)
+
+        _ ->
+            Err "Invalid query"
+
+
+tokenQueriesToToken query value token =
+    let
+        setToken newToken =
+            Result.map (\token -> { token | token = newToken }) token
+
+        setExpire newExpire =
+            Result.map (\token -> { token | expire = newExpire }) token
+    in
+        log ("processing query " ++ query ++ " for token") <|
+            case query of
+                "access_token" ->
+                    Result.andThen setToken <|
+                        Json.decodeString Json.string ("\"" ++ value ++ "\"")
+
+                "expires_in" ->
+                    Result.andThen setExpire <|
+                        Json.decodeString Json.float value
+
+                _ ->
+                    Err "Invalid query"
