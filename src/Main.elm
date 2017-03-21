@@ -22,171 +22,26 @@
 
 module Main exposing (..)
 
-import Debug exposing (log)
 import RouteUrl exposing (program, UrlChange)
 import Navigation exposing (Location)
-import UrlParser as Url
-import UrlParser exposing ((</>), (<?>))
 import RouteUrl.Builder as Builder
 
+import Material
 
--- Html stuff
-
-import Html exposing (div, text)
 import Json.Decode as Json
 import Dict
+
 import Result.Extra as Result
-import App.Model as App
-import App.Update as App
-import App.View as App
-import RedditAPI.Session as RedditAPI
-import RedditAPI.Update as RedditAPI
-import RedditAPI.Requests as RedditAPI
-import RedditAPI.Types as RedditAPI
-
-
--- ################## debug
-
 import Task
-import Http
-import Process
 import Time exposing (Time)
 
+import ModelAndMsg exposing (initialModel, Model, Page (..), Msg (..))
+import View exposing (view)
+import Update exposing (update)
 
--- Model
--- | A page within the SPA
-
-
-type Page
-    = Landing
-    | App
-    | PrivacyPolicy
-    | TermsOfUse
-      -- not implemented yet
-    | NotFound String
-
-
-
-{- | In the model we keep track of the current page, and the app state/model. -}
-
-
-type alias Model =
-    { currentPage : Page
-    , app : App.Model
-    , session : RedditAPI.Session
-    , now : Time
-    , waitingForNow : List Msg
-    , loadedData : Bool
-    , debug : List String
-    }
-
-
-initialModel =
-    { currentPage = Landing, app = App.initialModel, session = RedditAPI.emptySession, now = 0, waitingForNow = [], loadedData = False, debug = [] }
-
-
-
--- Update
-
-
-type Msg
-    = SetPage Page
-    | AppMsg App.Msg
-    | APIMsg (RedditAPI.Msg Msg)
-    | SetNow Time
-    | DataResponse (Result Http.Error RedditAPI.RedditResponse)
-    | Debug String
-    | NoOp
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        SetPage newPage ->
-            ( { model | currentPage = newPage }, Cmd.none )
-
-        AppMsg appMsg ->
-            let
-                ( updatedApp, appCmd ) =
-                    App.update appMsg model.app
-            in
-                ( { model | app = updatedApp }, Cmd.map AppMsg appCmd )
-
-        APIMsg apiMsg ->
-            let
-                ( updatedSession, sessionCmd ) =
-                    RedditAPI.update model.now APIMsg apiMsg model.session
-
-                savedRequest =
-                    Maybe.withDefault Cmd.none <|
-                        Maybe.map (Task.attempt DataResponse) <|
-                            RedditAPI.savedRequest updatedSession ""
-
-                newCmd =
-                    case apiMsg of
-                        RedditAPI.UsernameResponse _ ->
-                            if not model.loadedData then
-                                savedRequest
-                            else
-                                Cmd.none
-
-                        _ ->
-                            Cmd.none
-            in
-                log ("Dispatching " ++ toString apiMsg ++ ". newCmd = " ++ toString newCmd) <|
-                    if model.now /= 0 then
-                        { model | session = updatedSession } ! [ sessionCmd, newCmd ]
-                    else
-                        ( { model | waitingForNow = model.waitingForNow ++ [ APIMsg apiMsg ] }, Cmd.none )
-
-        SetNow now ->
-            let
-                chainUpdate msg ( model, cmd ) =
-                    let
-                        ( newModel, newCmd ) =
-                            update msg model
-                    in
-                        newModel ! [ cmd, newCmd ]
-            in
-                List.foldl chainUpdate ( { model | now = now, waitingForNow = [] }, Cmd.none ) model.waitingForNow
-
-        DataResponse (Ok response) ->
-            let
-                ( updatedApp, appCmd ) =
-                    App.update (App.AddItems response.items) model.app
-
-                savedRequest =
-                    Maybe.withDefault Cmd.none <|
-                        Maybe.map (Task.attempt DataResponse) <|
-                            RedditAPI.savedRequest model.session response.after
-
-                ( newModel, newCmd ) =
-                    if List.length response.items == 100 then
-                        ( model, savedRequest )
-                    else
-                        ( { model | loadedData = True }, Cmd.none )
-            in
-                -- TODO check (Dict.get "x-ratelimit-remaining" response.headers)
-                { newModel | app = updatedApp, loadedData = True } ! [ Cmd.map AppMsg appCmd, newCmd ]
-
-        DataResponse (Err error) ->
-            update (Debug <| toString error) model
-
-        Debug str ->
-            ( { model | debug = model.debug ++ [ str ] }, Cmd.none )
-
-        NoOp ->
-            ( model, Cmd.none )
-
-
-
--- View
-
-
-view model =
-    div []
-        [ Html.map AppMsg <| App.view model.app
-        ]
+import App.View as App
+import App.Update as App
+import RedditAPI.Update as RedditAPI
 
 
 
@@ -296,7 +151,10 @@ main =
         , location2messages = location2messages
         , init = init
         , update = update
-        , subscriptions = always <| Time.every (30 * Time.second) SetNow
+        , subscriptions = \model ->
+            Sub.batch [ Time.every (30 * Time.second) SetNow
+                      , Material.subscriptions Mdl model
+                      ]
         , view = view
         }
 
@@ -340,15 +198,14 @@ tokenQueriesToToken query value token =
         setExpire newExpire =
             Result.map (\token -> { token | expire = newExpire }) token
     in
-        log ("processing query " ++ query ++ " for token") <|
-            case query of
-                "access_token" ->
-                    Result.andThen setToken <|
-                        Json.decodeString Json.string ("\"" ++ value ++ "\"")
+        case query of
+            "access_token" ->
+                Result.andThen setToken <|
+                    Json.decodeString Json.string ("\"" ++ value ++ "\"")
 
-                "expires_in" ->
-                    Result.andThen setExpire <|
-                        Json.decodeString Json.float value
+            "expires_in" ->
+                Result.andThen setExpire <|
+                    Json.decodeString Json.float value
 
-                _ ->
-                    Err "Invalid query"
+            _ ->
+                Err "Invalid query"
