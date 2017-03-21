@@ -214,6 +214,14 @@ savedRequest session after =
         session.username
 
 
+-- The client_id and redirect_uri below are replaced in the build script
+accessRequestUrl =
+    "https://www.reddit.com/api/v1/authorize?response_type=token"
+        ++ "&client_id=ThisIsAMagicString"
+        ++ "&redirect_uri=ThisIsAMagicString"
+        ++ "&scope=history,identity&state=asdfghjkl" -- TODO actually generate and check the state parameter
+
+
 
 -- Helper
 
