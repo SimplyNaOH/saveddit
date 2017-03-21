@@ -19,7 +19,7 @@ module Update exposing (update)
 
 import Material
 
-import ModelAndMsg exposing (Msg (..), Model)
+import ModelAndMsg exposing (Msg (..), Model, Page (..))
 import App.Update as App
 import RedditAPI.Types as RedditAPI
 import RedditAPI.Update as RedditAPI
@@ -35,7 +35,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SetPage newPage ->
-            ( { model | currentPage = newPage }, Cmd.none )
+            ( { model | currentPage =
+                  -- provisory: do not allow going back to landing if we have a token
+                  if newPage == Landing && model.session.token /= Nothing
+                  then model.currentPage
+                  else newPage }, Cmd.none )
 
         AppMsg appMsg ->
             let

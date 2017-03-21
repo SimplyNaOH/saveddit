@@ -72,7 +72,7 @@ delta2url oldModel newModel =
 
         myBuilder = Builder.builder
           |> history
-          |> Builder.replacePath [toString newModel.currentPage]
+          |> Builder.replacePath [String.toLower <| toString newModel.currentPage]
           |> Builder.insertQuery "page" (pageNumber newModel)
           |> (if not (diff filters) then identity else Builder.insertQuery "filters" (toString <| filters newModel))
           |> Builder.insertQuery "username" (Maybe.withDefault "" <| username newModel)
