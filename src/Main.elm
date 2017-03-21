@@ -196,7 +196,7 @@ view model =
 delta2url : Model -> Model -> Maybe UrlChange
 delta2url oldModel newModel =
     let
-        page =
+        pageNumber =
             toString << .page << .app
 
         filters =
@@ -206,43 +206,25 @@ delta2url oldModel newModel =
             .username << .session
 
         diff f =
-            if f oldModel /= f newModel then
-                Just
-            else
-                always Nothing
+            f oldModel /= f newModel
 
-        maybePageUpdate : Maybe (Builder.Builder -> Builder.Builder)
-        maybePageUpdate =
-            diff page <|
-                (\builder ->
-                    builder
-                        |> Builder.newEntry
-                        |> Builder.insertQuery "page" (page newModel)
-                )
+        history =
+            if diff pageNumber || diff .currentPage ||
+                (diff filters &&
+                    (List.isEmpty (filters oldModel) || List.isEmpty (filters newModel)))
+            then Builder.newEntry
+            else Builder.modifyEntry
 
-        maybeUsernameUpdate =
-            diff username <|
-                (\builder ->
-                    builder
-                        |> Builder.modifyEntry
-                        |> Builder.insertQuery "username" (Maybe.withDefault "" <| username newModel)
-                )
-
-        updates =
-            [ maybePageUpdate, maybeUsernameUpdate ]
-
-        isNothing maybe =
-            case maybe of
-                Nothing ->
-                    True
-
-                Just _ ->
-                    False
+        myBuilder = Builder.builder
+          |> history
+          |> Builder.replacePath [toString newModel.currentPage]
+          |> Builder.insertQuery "page" (pageNumber newModel)
+          |> (if not (diff filters) then identity else Builder.insertQuery "filters" (toString <| filters newModel))
+          |> Builder.insertQuery "username" (Maybe.withDefault "" <| username newModel)
     in
-        if (List.isEmpty << List.filter (not << isNothing)) updates then
-            Nothing
-        else
-            Just <| Builder.toHashChange << List.foldl (\f acc -> f acc) Builder.builder << List.map (Maybe.withDefault identity) <| updates
+      if diff .currentPage || diff pageNumber || diff filters || diff (.token << .session)
+      then Just <| Builder.toHashChange myBuilder
+      else Nothing
 
 
 location2messages : Location -> List Msg
@@ -292,8 +274,12 @@ location2messages location =
                     )
                 <|
                     Dict.foldl tokenQueriesToToken (Ok { token = "", expire = 0 }) tokenQueries
+        setPage =
+            if tokenMsg /= NoOp
+            then SetPage App
+            else SetPage page
     in
-        Debug ("Hash = " ++ location.hash ++ " corrected to " ++ hash) :: SetPage page :: tokenMsg :: subMsgs
+        Debug ("Hash = " ++ location.hash ++ " corrected to " ++ hash) :: setPage :: tokenMsg :: subMsgs
 
 
 
