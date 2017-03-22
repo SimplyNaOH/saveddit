@@ -45,7 +45,8 @@ logo =
       ]
     ]
 -}
-logo = img [Html.Attributes.src "logo.svg"] []
+logo = img [Html.Attributes.src "resources/logo.svg"] []
+altlogo = img [Html.Attributes.src "resources/alt-logo.svg", style [("height", "20px"), ("padding-bottom", "4px")]] []
 
 notFoundView str = [ Html.p [] [text "Error 404"]
                    , Html.p [] [text (str ++ " not found.")]
@@ -58,14 +59,11 @@ landingView model =
           , p [] [text "Filter your saved posts"]
           ]
     , Html.h3 [] [text "What?"]
-    , p [] [text "This webapp allows you to view your reddit saved posts organized by subreddit. It's an experiment on using Elm and thus not a serious project, use it under your own risk!"]
+    , p [] [text "This webapp allows you to ", Html.b [class "mdl-color-text--primary"] [text "view your reddit saved posts organized by subreddit"], text ". It is an ongoing open source project written in Elm. Suggestions and contributions are welcome, head over to the ", a [href "https://github.com/simplynaoh/saveddit", target "_blank"] [text "github repo"], text "!"]
     , Html.h3 [] [text "How?"]
-    , p [] [ text "In order to show you your saved posts you need to give the app permission to access your reddit account. Dont't worry! This app is 100% client-side and "
-           , a [href "https://github.com/simplynaoh/saveddit", target "_blank"] [text "open source"]
-           , text ", which means that you can rest assured that your data stays with you. Moreover, this app will only ask you for access to your username and reddit history."
-           ]
-    , p [] [Html.b [] [text "Having said that, your data (access token, username and saved posts) will remain in your device's memory for a short period of time. If your device is compromised, we can't guarantee the integrity and safety of your data."]]
-    , p [] [text "When you are ready, click the following button to ask reddit for permission into your account (don't worry, reddit will ask for confirmation!):"]
+    , p [] [ text "In order to show you your saved posts you need to give the app permission to access your reddit account. Dont't worry! This app is 100% client-side and open source, which means that you can rest assured that your data stays with you. Moreover, this app will only ask you for access to your username and reddit history."]
+    , p [] [Html.b [] [text "Having said that, your data (access token, username and saved posts) will remain in your device's memory for a short period of time. If your device is compromised, we can't guarantee the integrity and safety of this information."]]
+    , p [] [text "When you are ready, click the following button to ask reddit for permission into your account; reddit will ask for confirmation:"]
     , div [class "landing__login-button" ]
         [ Button.render Mdl [0] model.mdl
             [ Button.raised
@@ -98,8 +96,8 @@ pageView model =
 
 header model =
   Layout.row []
-    [ Layout.title [] [text "saveddit"]
-    , Html.span [] [text <| toString model.currentPage]
+    [ Layout.title [] [altlogo]--[text "saveddit"]
+    --, Html.span [] [text <| toString model.currentPage]
     , Layout.spacer
     , Layout.navigation []
       [ Button.render Mdl [0] model.mdl
