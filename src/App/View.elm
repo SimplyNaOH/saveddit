@@ -21,7 +21,7 @@ import Html exposing (div, ul, li, span, a, h1, p, text, img, i)
 import Html.Attributes exposing (class, href, target, src, attribute, id, classList, placeholder)
 import Html.Events exposing (onClick, onBlur, onFocus)
 import Html.Keyed as Keyed
-import SearchableMenu as Menu
+import App.FiltersMenu as Menu
 import App.Model exposing (Model, filtered, SubOver18(..))
 import App.Update exposing (Msg(..))
 import App.ItemListView exposing (itemsView)
@@ -33,10 +33,10 @@ import List exposing (length)
 
 pagination model =
     div [ class "pagination" ]
-        [ a [ class "pagination__prev-button", onClick PrevSlice, href "#0" ] [ text "<" ]
+        [ a [ class "pagination__prev-button", onClick PrevSlice] [ text "<" ]
         , span [ class "pagination__counter" ]
             [ text <| (toString <| model.page + 1) ++ "/" ++ (toString <| 1 + length (filtered model) // model.sliceLength) ]
-        , a [ class "pagination__next-button", onClick NextSlice, href "#0" ] [ text ">" ]
+        , a [ class "pagination__next-button", onClick NextSlice] [ text ">" ]
         ]
 
 
@@ -61,40 +61,14 @@ filtersView model =
             , ( toString (sub ++ "-sep"), text " " )
             ]
 
-        classes isSelected sub =
-            classList
-                [ ( "subreddits-menu__subreddit", True )
-                , ( "subreddits-menu--selected", isSelected )
-                , ( "subreddits-menu__subreddit--active", List.member sub.subreddit model.filters )
-                , ( "nsfw-tagged", sub.over18 == NSFW )
-                ]
-
-        config =
-            { toId = .subreddit
-            , div =
-                \isOpen ->
-                    if isOpen then
-                        [ class "subreddits-menu" ]
-                    else
-                        [ class "subreddits-menu subreddits-menu--collapsed" ]
-            , ul = [ class "subreddits-menu__list" ]
-            , li = \isSelected result -> Menu.HtmlDetails [] [ a ((classes isSelected (Tuple.second result)) :: [ href "#0", onClick <| Menu.Select (.subreddit << Tuple.second <| result), onBlur Menu.LostFocus, onFocus Menu.Open ]) (Menu.simpleSpanView [ class "subreddits-menu__match" ] result) ]
-            , input = [ class "subreddits-menu__input", placeholder "Add a subreddit" ]
-            , prepend = Nothing
-            , append =
-                Just <|
-                    { attributes = [ class "subreddits-box__close-button" ]
-                    , children = [ a [ href "#0", onClick <| Menu.Close ] [ i [ class "fa fa-times-circle" ] [] ] ]
-                    }
-            }
     in
         div [ class <| "filter-box" ] <|
-            [ h1 [] [ text "Filter by subreddit" ]
-            , span [] [ a [ classList [ ( "filter-box__clear-all-button", True ), ( "filter-box__clear-all-button--hidden", List.isEmpty model.filters ) ], href "#0", onClick ClearFilters ] [ text "clear-all" ] ]
-            , Keyed.ul [ classList [ ( "active-box", True ), ( "active-box--no-active", List.isEmpty model.filters ) ] ]
-                (List.concatMap filterView model.filters)
-            ]
-                ++ [ Html.map MenuMsg <| Menu.view config model.menu <| List.filter (checkNSFW) model.subreddits ]
+              [ h1 [] [ text "Filter by subreddit" ]
+              , span [] [ a [ classList [ ( "filter-box__clear-all-button", True ), ( "filter-box__clear-all-button--hidden", List.isEmpty model.filters ) ], href "#0", onClick (MenuMsg Menu.OpenMenu) ] [ text "clear-all" ] ]
+              , Keyed.ul [ classList [ ( "active-box", True ), ( "active-box--no-active", List.isEmpty model.filters ) ] ]
+                  (List.concatMap filterView model.filters)
+              ]
+                ++ [Menu.view MenuMsg Mdl ToggleSubreddit model.menu model  <| List.filter (checkNSFW) model.subreddits ]
 
 
 view : Model -> Html.Html Msg

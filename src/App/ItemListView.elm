@@ -17,11 +17,17 @@
 
 module App.ItemListView exposing (..)
 
+import Material.List as Lists
+import Material.Options as Options
+import Material.Button as Button
+import Material.Icon as Icon
+
 import Html exposing (div, ul, li, span, a, h1, p, text, img, i)
 import Html.Attributes exposing (class, href, target, src, attribute, id)
 import Html.Keyed as Keyed
-import RedditAPI.Types exposing (Item(..), Subreddit)
+import RedditAPI.Types exposing (Item (..), Subreddit)
 import App.Model exposing (filtered)
+import App.Update exposing (Msg (..))
 
 
 -- View
@@ -114,14 +120,39 @@ itemView i item =
             Comment comment ->
                 ( comment.id, li (idWithClass "comment") <| commentView comment )
 
-
 itemsView model =
-    Keyed.ul [ class "item-container" ] <|
+  let
+    itemView idx item =
+      case item of
+        Link info ->
+          Lists.li []
+              [ Lists.content []
+                  [ Lists.avatarImage info.previewURL []
+                  , text info.title
+                  ]
+              , Button.render Mdl [idx] model.mdl
+                  [ Button.icon
+                  , Button.link info.url
+                  , Options.attribute <| Html.Attributes.target "_blank"
+                  ]
+                  [ Icon.i "open_in_new" ]
+              ]
+        Comment info ->
+          Lists.li [ Lists.withBody, Options.cs "comment" ] -- NB! Required on every Lists.li containing body.
+              [ Lists.content []
+                  [ Lists.avatarIcon "comment" []
+                  , text info.title
+                  , Lists.body [] [ text info.body ]
+                  ]
+              ]
+
+
+  in
+    Lists.ul [] <|
         List.indexedMap itemView <|
             List.take model.sliceLength <|
                 List.drop (model.page * model.sliceLength) <|
                     filtered model
-
 
 
 -- Helper functions for items:
