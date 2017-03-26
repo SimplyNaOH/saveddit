@@ -1,11 +1,17 @@
 # Saveddit
 ###### View and filter your reddit saved posts
 
-## UPDATE 2017/03/20
+## ~~UPDATE 2017/03/20~~
 
-**There's a major refactor coming up in the
+~~**There's a major refactor coming up in the
 [refactor branch](https://github.com/SimplyNaOH/saveddit/tree/refactor). If you
-are considering contributing to this project, you should start there!**
+are considering contributing to this project, you should start there!**~~
+
+**Update 2017/03/25**
+
+Ongoing development is happening in the new
+[devel branch](https://github.com/SimplyNaOH/saveddit/tree/devel). Major changes
+have been made and more are to come as we approach v1.0.
 
 ## Introduction
 
