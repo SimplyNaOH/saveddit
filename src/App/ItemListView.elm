@@ -21,6 +21,7 @@ import Material.List as Lists
 import Material.Options as Options
 import Material.Button as Button
 import Material.Icon as Icon
+import Material.Color as Color
 
 import Html exposing (div, ul, li, span, a, h1, p, text, img, i)
 import Html.Attributes exposing (class, href, target, src, attribute, id)
@@ -127,23 +128,47 @@ itemsView model =
         Link info ->
           Lists.li []
               [ Lists.content []
-                  [ Lists.avatarImage info.previewURL []
-                  , text info.title
+                  [ a [href info.url, target "_blank"]
+                      [ Lists.avatarImage info.previewURL []
+                      , span [] [text info.title]
+                      ]
                   ]
-              , Button.render Mdl [idx] model.mdl
-                  [ Button.icon
-                  , Button.link info.url
-                  , Options.attribute <| Html.Attributes.target "_blank"
+              , Lists.content2 []
+                [ Lists.info2 [] [ text <| toString info.numComments ++ " ", i [ class "fa fa-comments", attribute "aria-hidden" "true" ] [] ]
+                , Options.span [Lists.action2]
+                  [ Button.render Mdl [1, idx] model.mdl
+                    [ Button.icon
+                    , Button.colored
+                    , Button.link info.commentsURL
+                    , Options.attribute <| Html.Attributes.target "_blank"
+                    ]
+                    [ Icon.i "comment" ]
                   ]
-                  [ Icon.i "open_in_new" ]
+                , Options.span [Lists.action2]
+                    [ Button.render Mdl [0, idx] model.mdl
+                        [ Button.icon
+                        , Button.colored
+                        , Button.link info.url
+                        , Options.attribute <| Html.Attributes.target "_blank"
+                        ]
+                        [ Icon.i "open_in_new" ]
+                    ]
+                ]
               ]
         Comment info ->
           Lists.li [ Lists.withBody, Options.cs "comment" ] -- NB! Required on every Lists.li containing body.
               [ Lists.content []
-                  [ Lists.avatarIcon "comment" []
+                  [ Lists.avatarIcon "comment" [Color.background Color.accent]
                   , text info.title
-                  , Lists.body [] [ text info.body ]
+                  , Lists.body [] [ a [href info.url, target "_blank"] [ text info.body ] ]
                   ]
+              , Button.render Mdl [0, idx] model.mdl
+                  [ Button.icon
+                  , Button.colored
+                  , Button.link info.url
+                  , Options.attribute <| Html.Attributes.target "_blank"
+                  ]
+                  [ Icon.i "open_in_new" ]
               ]
 
 
