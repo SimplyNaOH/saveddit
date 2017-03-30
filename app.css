@@ -55,20 +55,36 @@
 
 .mdl-list__item-primary-content > a > span {
   display: inline-block;
-  width: calc(100% - 70px - 16px);
+  width: calc(100% - 60px - 6px);
   vertical-align: middle;
 }
 
-.mdl-list__item-avatar {
-  height: 70px;
-  width: 70px;
+@media only screen and (min-width: 768px) {
+  .mdl-list__item-primary-content > a > span {
+    width: calc(100% - 70px - 16px);
+  }
+}
+
+
+.mdl-list__item .mdl-list__item-primary-content .mdl-list__item-avatar {
+  height: 60px;
+  width: 60px;
+  margin-right: 6px;
   border-radius: 2px;
 }
 
-.comment .mdl-list__item-avatar {
+@media only screen and (min-width: 768px) {
+  .mdl-list__item-avatar {
+    height: 70px;
+    width: 70px;
+  }
+}
+
+.comment.mdl-list__item .mdl-list__item-primary-content .mdl-list__item-avatar {
   border-radius: 50%;
   height: 40px;
   width: 40px;
+  margin-right: 16px;
 }
 
 .comment {
