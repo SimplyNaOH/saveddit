@@ -17,7 +17,14 @@
 
 module App.View exposing (..)
 
-import Html exposing (div, ul, li, span, a, h1, p, text, img, i)
+import Material.Chip as Chip
+import Material.Color as Color
+import Material.Elevation as Elevation
+import Material.Options as Options
+import Material.Button as Button
+import Material.Icon as Icon
+
+import Html exposing (div, ul, li, span, a, h1, h6, p, text, img, i)
 import Html.Attributes exposing (class, href, target, src, attribute, id, classList, placeholder)
 import Html.Events exposing (onClick, onBlur, onFocus)
 import Html.Keyed as Keyed
@@ -60,13 +67,46 @@ filtersView model =
               )
             , ( toString (sub ++ "-sep"), text " " )
             ]
+        activeView = ul [ classList [ ( "filter-box__active-box", True ), ( "filter-box__active-box--empty", List.isEmpty model.filters ) ] ] <|
+            List.map (\sub ->
+              Chip.span
+                [ Chip.deleteIcon "cancel"
+                , Chip.deleteClick <| ToggleSubreddit sub
+                , Options.css "margin" "5px 5px"
+                ]
+                [ Chip.contact Html.span
+                    [ Color.background Color.primary
+                    , Color.text Color.white
+                    ]
+                    [ text "/r/" ]
+                , Chip.content []
+                    [ text sub ]
+                ]
+              )
+              model.filters ++
+                [ Button.render Mdl [0] model.mdl
+                      [ Button.icon
+                      , Options.onClick <| if model.menu.isOpen
+                                           then MenuMsg Menu.CloseMenu
+                                           else MenuMsg Menu.OpenMenu
+                      , Options.cs "filter-box__add-button"
+                      , if model.menu.isOpen then Options.cs "filter-box__add-button--rotated" else Options.nop
+                      ]
+                      [ Icon.i "add_cirlce"]
+                ]
 
     in
-        div [ class <| "filter-box" ] <|
-              [ h1 [] [ text "Filter by subreddit" ]
-              , span [] [ a [ classList [ ( "filter-box__clear-all-button", True ), ( "filter-box__clear-all-button--hidden", List.isEmpty model.filters ) ], href "#0", onClick (MenuMsg Menu.OpenMenu) ] [ text "clear-all" ] ]
-              , Keyed.ul [ classList [ ( "active-box", True ), ( "active-box--no-active", List.isEmpty model.filters ) ] ]
-                  (List.concatMap filterView model.filters)
+        Options.div [ Elevation.e2 ] <|
+              [ h6 [ class "filter-box__title" ] [ text "Active filters:" ]
+              , Button.render Mdl [0] model.mdl
+                [ Button.accent
+                , Button.ripple
+                , Options.onClick ClearFilters
+                , Options.cs "filter-box__clear-all-button"
+                , if List.isEmpty model.filters then Options.cs "filter-box__clear-all-button--hidden" else Options.nop
+                ]
+                [ text "clear-all"]
+              , activeView
               ]
                 ++ [Menu.view MenuMsg Mdl ToggleSubreddit model.menu model  <| List.filter (checkNSFW) model.subreddits ]
 
