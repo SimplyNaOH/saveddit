@@ -17,11 +17,16 @@
 
 module App.Update exposing (..)
 
+import Material
+
 import App.Model exposing (Model, SubOver18(..), SubredditInfo, filtered)
 import RedditAPI.Types exposing (isNSFW, subreddit, Item, Subreddit)
-import SearchableMenu as Menu
+import App.FiltersMenu as Menu
 import List exposing (length)
 
+import Task
+import Process
+import Time
 
 -- Update
 
@@ -40,6 +45,8 @@ type Msg
     | NoOp
     | SetPage Int
     | SetFilters (List Subreddit)
+    | Mdl (Material.Msg Msg)
+
 
 
 
@@ -171,18 +178,10 @@ update msg model =
 
             MenuMsg msg ->
                 let
-                    config =
-                        { textboxId = "myId", onSelectMsg = ToggleSubreddit, toId = .subreddit }
-
-                    ( updatedMenu, menuCmd, maybeMsg ) =
-                        Menu.update config msg model.menu model.subreddits
+                    ( updatedMenu, menuCmds ) =
+                        Menu.update msg model.menu
                 in
-                    case maybeMsg of
-                        Nothing ->
-                            ( { model | menu = updatedMenu }, Cmd.none )
-
-                        Just msg ->
-                            update msg model
+                    ( { model | menu = updatedMenu }, Cmd.map MenuMsg menuCmds )
 
             SetPage page ->
                 let
@@ -207,6 +206,9 @@ update msg model =
                   }
                 , Cmd.none
                 )
+
+            Mdl msg_ ->
+              Material.update Mdl msg_ model
 
             NoOp ->
                 ( model, Cmd.none )

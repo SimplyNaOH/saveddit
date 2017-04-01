@@ -154,6 +154,7 @@ main =
         , subscriptions = \model ->
             Sub.batch [ Time.every (30 * Time.second) SetNow
                       , Material.subscriptions Mdl model
+                      , Sub.map AppMsg <| Material.subscriptions (App.Mdl) model.app
                       ]
         , view = view
         }

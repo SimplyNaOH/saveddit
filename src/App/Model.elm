@@ -17,8 +17,10 @@
 
 module App.Model exposing (..)
 
+import Material
+
 import RedditAPI.Types exposing (Item, Subreddit, subreddit, isNSFW)
-import SearchableMenu as Menu
+import App.FiltersMenu as Menu
 
 
 -- Model
@@ -63,12 +65,13 @@ type alias Model =
     , showNSFW : Bool
     , page : Int
     , sliceLength : Int
-    , menu : Menu.Model
+    , menu : Menu.State
+    , mdl : Material.Model
     }
 
 
 initialModel =
-    Model [] [] [] False 0 15 Menu.initialModel
+    Model [] [] [] False 0 15 Menu.initialState Material.model
 
 
 
