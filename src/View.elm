@@ -35,16 +35,7 @@ import App.View as App
 import RedditAPI.Requests as RedditAPI
 
 -- View
-{-
-logo =
-  Svg.svg [Svg.width "133", Svg.height "31"]
-    [Svg.text_ [Svg.x "0", Svg.y "31", Svg.fontSize "31px", Svg.fontFamily "sans-serif"]
-      [ Svg.tspan [Svg.fill "#00b358", Svg.dx "0 -4 -4 -4 -4"] [Svg.text "saved"]
-      , Svg.tspan [Svg.fill "#67da00", Svg.fillOpacity "0.5", Svg.dx "-4"] [Svg.text "d"]
-      , Svg.tspan [Svg.fill "#ff8c00", Svg.dx "-4 -4"] [Svg.text "it"]
-      ]
-    ]
--}
+
 logo = img [Html.Attributes.src "resources/logo.svg"] []
 altlogo = img [Html.Attributes.src "resources/alt-logo.svg", style [("height", "20px"), ("padding-bottom", "4px")]] []
 

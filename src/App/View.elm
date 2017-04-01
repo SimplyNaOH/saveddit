@@ -52,21 +52,6 @@ filtersView model =
         checkNSFW sub =
             not <| not model.showNSFW && (sub.over18 == NSFW)
 
-        filterView sub =
-            [ ( sub
-              , li []
-                    [ a
-                        [ href "#0"
-                        , class "active-box__sub"
-                        , onClick <| ToggleSubreddit sub
-                          --, onMouseEnter <| MenuMsg <| Menu.SetMouseOver True
-                          --, onMouseLeave <| MenuMsg <| Menu.SetMouseOver False
-                        ]
-                        [ text sub ]
-                    ]
-              )
-            , ( toString (sub ++ "-sep"), text " " )
-            ]
         activeView = ul [ classList [ ( "filter-box__active-box", True ), ( "filter-box__active-box--empty", List.isEmpty model.filters ) ] ] <|
             List.map (\sub ->
               Chip.span
@@ -113,11 +98,4 @@ filtersView model =
 
 view : Model -> Html.Html Msg
 view model =
-    let
-        itemView : { a | subreddit : String } -> List (Html.Html Never)
-        itemView =
-            flip (::) [] << text << .subreddit
-
-        --config = { openDivClass = "active-box", closedDivClass = "active-box subreddits-box--collapsed", olClass = "subreddits-box", liClass = "subreddits-box__subreddit", liView = itemView, textboxClass = "active-box__input", textboxId = "myId", textboxPlaceholder = "Search subreddits", toId = .subreddit}
-    in
-        div [ class "app" ] [ filtersView model, pagination model, itemsView model, pagination model ]
+    div [ class "app" ] [ filtersView model, pagination model, itemsView model, pagination model ]
