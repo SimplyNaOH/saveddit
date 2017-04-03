@@ -111,6 +111,9 @@ update msg model =
         Mdl msg_ ->
           Material.update Mdl msg_ model
 
+        ToggleTOS ->
+          ( { model | acceptedTOS = not model.acceptedTOS }, Cmd.none)
+
         Debug str ->
             ( { model | debug = model.debug ++ [ str ] }, Cmd.none )
 

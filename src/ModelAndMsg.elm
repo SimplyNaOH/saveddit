@@ -55,12 +55,13 @@ type alias Model =
     , waitingForNow : List Msg
     , loadedData : Bool
     , mdl : Material.Model
+    , acceptedTOS : Bool
     , debug : List String
     }
 
 
 initialModel =
-    { currentPage = Landing, app = App.initialModel, session = RedditAPI.emptySession, now = 0, waitingForNow = [], loadedData = False, mdl = Material.model, debug = [] }
+    { currentPage = Landing, app = App.initialModel, session = RedditAPI.emptySession, now = 0, waitingForNow = [], loadedData = False, mdl = Material.model, acceptedTOS = False, debug = [] }
 
 type Msg
     = SetPage Page
@@ -70,4 +71,5 @@ type Msg
     | DataResponse (Result Http.Error RedditAPI.RedditResponse)
     | Mdl (Material.Msg Msg)
     | Debug String
+    | ToggleTOS
     | NoOp
