@@ -22,9 +22,6 @@ module View exposing (view)
 import Html exposing (div, h1, p, text, span, img, a)
 import Html.Attributes exposing (class, style, href, target)
 
-import Svg
-import Svg.Attributes as Svg
-
 
 import Material
 import Material.Layout as Layout
