@@ -1,0 +1,44 @@
+.landing__logo {
+  text-align: center;
+}
+
+.landing__logo img {
+  width: 200px;
+  padding: 20px 0 0 0;
+}
+
+.landing__logo p {
+  color: #2196f3;
+  margin-top: -8px;
+  margin-bottom: 30px;
+}
+
+.landing__login {
+  margin-bottom: 30px;
+  width: 271px;
+  margin: auto;
+}
+
+.landing__login-button {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.landing__login-checkbox {
+  height: unset;
+}
+
+@media only screen and (min-width: 470px) {
+  .landing > .landing__login {
+    display: none;
+  }
+  .landing > .landing__login ~ .landing__login {
+    display: block;
+  }
+}
+
+.landing {
+  width: 80%;
+  margin: auto;
+  text-align: justify;
+}
