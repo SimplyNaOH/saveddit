@@ -1,9 +1,7 @@
 #!/bin/bash
 
-#client_id="YISUqq3DQ-5emQ"
-#_redirect_uri="https://simplynaoh.github.io/saveddit/"
-client_id="IHqVmcphnk2YGw"
-_redirect_uri="http://127.0.0.1:8000/"
+client_id="YISUqq3DQ-5emQ"
+_redirect_uri="https://simplynaoh.github.io/saveddit/"
 redirect_uri=$(echo $_redirect_uri | sed -e 's/\//\\\//g')
 
 tmp="/tmp/tmpRequests.elm"
