@@ -27,8 +27,6 @@ import RedditAPI.Requests as RedditAPI
 
 import Task
 
-import Debug exposing (log)
-
 -- Update
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -69,11 +67,10 @@ update msg model =
                         _ ->
                             Cmd.none
             in
-                log ("Dispatching " ++ toString apiMsg ++ ". newCmd = " ++ toString newCmd) <|
-                    if model.now /= 0 then
-                        { model | session = updatedSession } ! [ sessionCmd, newCmd ]
-                    else
-                        ( { model | waitingForNow = model.waitingForNow ++ [ APIMsg apiMsg ] }, Cmd.none )
+                if model.now /= 0 then
+                    { model | session = updatedSession } ! [ sessionCmd, newCmd ]
+                else
+                    ( { model | waitingForNow = model.waitingForNow ++ [ APIMsg apiMsg ] }, Cmd.none )
 
         SetNow now ->
             let

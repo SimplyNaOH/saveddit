@@ -18975,7 +18975,7 @@ var _simplynaoh$saveddit$RedditAPI_Requests$usernameRequest = function (session)
 				return A4(
 					_simplynaoh$saveddit$RedditAPI_Requests$retriedRequest,
 					'',
-					1,
+					_elm_lang$core$Time$second * 2,
 					5,
 					_elm_lang$http$Http$request(
 						{
@@ -19208,7 +19208,7 @@ var _simplynaoh$saveddit$RedditAPI_Requests$savedRequest = F2(
 					return A4(
 						_simplynaoh$saveddit$RedditAPI_Requests$retriedRequest,
 						_simplynaoh$saveddit$RedditAPI_Requests$emptyResponse,
-						1,
+						_elm_lang$core$Time$second * 2,
 						5,
 						_elm_lang$http$Http$request(
 							{
@@ -20215,47 +20215,35 @@ var _simplynaoh$saveddit$Update$update = F2(
 							return _elm_lang$core$Platform_Cmd$none;
 						}
 					}();
-					return A2(
-						_elm_lang$core$Debug$log,
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							'Dispatching ',
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								_elm_lang$core$Basics$toString(_p5),
-								A2(
-									_elm_lang$core$Basics_ops['++'],
-									'. newCmd = ',
-									_elm_lang$core$Basics$toString(newCmd)))),
-						(!_elm_lang$core$Native_Utils.eq(model.now, 0)) ? A2(
-							_elm_lang$core$Platform_Cmd_ops['!'],
-							_elm_lang$core$Native_Utils.update(
-								model,
-								{session: updatedSession}),
-							{
+					return (!_elm_lang$core$Native_Utils.eq(model.now, 0)) ? A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{session: updatedSession}),
+						{
+							ctor: '::',
+							_0: sessionCmd,
+							_1: {
 								ctor: '::',
-								_0: sessionCmd,
-								_1: {
-									ctor: '::',
-									_0: newCmd,
-									_1: {ctor: '[]'}
-								}
-							}) : {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.update(
-								model,
-								{
-									waitingForNow: A2(
-										_elm_lang$core$Basics_ops['++'],
-										model.waitingForNow,
-										{
-											ctor: '::',
-											_0: _simplynaoh$saveddit$ModelAndMsg$APIMsg(_p5),
-											_1: {ctor: '[]'}
-										})
-								}),
-							_1: _elm_lang$core$Platform_Cmd$none
-						});
+								_0: newCmd,
+								_1: {ctor: '[]'}
+							}
+						}) : {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								waitingForNow: A2(
+									_elm_lang$core$Basics_ops['++'],
+									model.waitingForNow,
+									{
+										ctor: '::',
+										_0: _simplynaoh$saveddit$ModelAndMsg$APIMsg(_p5),
+										_1: {ctor: '[]'}
+									})
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
 				case 'SetNow':
 					var chainUpdate = F2(
 						function (msg, _p6) {

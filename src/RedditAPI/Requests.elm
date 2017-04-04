@@ -166,7 +166,7 @@ usernameRequest : Session -> Maybe (Task Http.Error String)
 usernameRequest session =
     Maybe.map
         ((\token ->
-            retriedRequest "" 1 5 <|
+            retriedRequest "" (Time.second * 2) 5 <|
                 Http.request
                     { method = "GET"
                     , headers = [ Http.header "Authorization" ("bearer " ++ token) ]
@@ -190,7 +190,7 @@ savedRequest : Session -> String -> Maybe (Task Http.Error RedditResponse)
 savedRequest session after =
     Maybe.map2
         (\token username ->
-            retriedRequest emptyResponse 1 5 <|
+            retriedRequest emptyResponse (Time.second * 2) 5 <|
                 Http.request
                     { method = "GET"
                     , headers =
