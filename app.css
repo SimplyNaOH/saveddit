@@ -157,3 +157,7 @@
   white-space: nowrap;
   margin-right: 5px;
 }
+
+.pagination__prev-button, .pagination__next-button {
+  cursor: pointer;
+}
